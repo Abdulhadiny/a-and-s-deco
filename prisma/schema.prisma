@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum ItemStatus {
+  AVAILABLE
+  DAMAGED
+  RETIRED
+}
+
+enum EventType {
+  WEDDING
+  NAMING
+  BIRTHDAY
+  GRADUATION
+  OTHER
+}
+
+enum EventStatus {
+  UPCOMING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ReturnCondition {
+  GOOD
+  DAMAGED
+  MISSING
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(STAFF)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model ItemCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  items Item[]
+
+  @@map("item_categories")
+}
+
+model Item {
+  id             String     @id @default(cuid())
+  categoryId     String     @map("category_id")
+  name           String
+  tag            String     @unique
+  rentalPrice    Decimal    @map("rental_price") @db.Decimal(18, 2)
+  description    String?
+  imageUrl       String?    @map("image_url")
+  status         ItemStatus @default(AVAILABLE)
+  conditionNotes String?    @map("condition_notes")
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  category   ItemCategory @relation(fields: [categoryId], references: [id])
+  eventItems EventItem[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@map("items")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  events Event[]
+
+  @@map("customers")
+}
+
+model Event {
+  id         String      @id @default(cuid())
+  customerId String      @map("customer_id")
+  title      String
+  eventType  EventType   @map("event_type")
+  eventDate  DateTime    @map("event_date") @db.Date
+  setupDate  DateTime?   @map("setup_date") @db.Date
+  returnDate DateTime?   @map("return_date") @db.Date
+  venue      String?
+  status     EventStatus @default(UPCOMING)
+  notes      String?
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  eventItems EventItem[]
+  quotes     Quote[]
+
+  @@index([customerId])
+  @@index([eventDate])
+  @@index([status])
+  @@map("events")
+}
+
+model EventItem {
+  id              String           @id @default(cuid())
+  eventId         String           @map("event_id")
+  itemId          String           @map("item_id")
+  allocatedAt     DateTime         @default(now()) @map("allocated_at")
+  returnedAt      DateTime?        @map("returned_at")
+  returnCondition ReturnCondition? @map("return_condition")
+  damageNotes     String?          @map("damage_notes")
+  damagePhotoUrl  String?          @map("damage_photo_url")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  item  Item  @relation(fields: [itemId], references: [id])
+
+  @@unique([eventId, itemId])
+  @@index([itemId])
+  @@map("event_items")
+}
+
+model Quote {
+  id        String      @id @default(cuid())
+  eventId   String      @map("event_id")
+  status    QuoteStatus @default(DRAFT)
+  subtotal  Decimal     @map("subtotal") @db.Decimal(18, 2)
+  discount  Decimal?    @db.Decimal(18, 2)
+  total     Decimal     @db.Decimal(18, 2)
+  notes     String?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  lines QuoteLine[]
+
+  @@index([eventId])
+  @@map("quotes")
+}
+
+model QuoteLine {
+  id          String  @id @default(cuid())
+  quoteId     String  @map("quote_id")
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(18, 2)
+  lineTotal   Decimal @map("line_total") @db.Decimal(18, 2)
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+  @@map("quote_lines")
+}
