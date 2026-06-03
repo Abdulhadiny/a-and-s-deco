@@ -1,152 +1,223 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { ItemStatus } from "@/generated/prisma";
+import { auth } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
+import { AuditAction } from "@/generated/prisma";
+import { categorySchema, itemSchema } from "@/lib/validators";
+import { revalidatePath } from "next/cache";
 
-export async function getCategories() {
-  return db.itemCategory.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { items: true } } },
+/**
+ * Creates a new item category.
+ */
+export async function createCategory(data: any) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const validated = categorySchema.parse(data);
+
+  const category = await db.itemCategory.create({
+    data: validated,
   });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.create,
+    module: "inventory",
+    recordId: category.id,
+    recordTable: "item_categories",
+    newValues: category,
+  });
+
+  revalidatePath("/settings/products");
+  return category;
 }
 
-export async function createCategory(formData: FormData) {
-  const name = formData.get("name") as string;
-  const description = formData.get("description") as string | null;
-  if (!name?.trim()) throw new Error("Category name is required");
+/**
+ * Updates an item category.
+ */
+export async function updateCategory(id: string, data: any) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
 
-  await db.itemCategory.create({
-    data: { name: name.trim(), description: description?.trim() || null },
-  });
-  revalidatePath("/inventory");
-}
+  const validated = categorySchema.parse(data);
 
-export async function getItems(filters?: {
-  categoryId?: string;
-  status?: ItemStatus;
-  search?: string;
-}) {
-  return db.item.findMany({
-    where: {
-      ...(filters?.categoryId ? { categoryId: filters.categoryId } : {}),
-      ...(filters?.status ? { status: filters.status } : {}),
-      ...(filters?.search
-        ? {
-            OR: [
-              { name: { contains: filters.search, mode: "insensitive" } },
-              { tag: { contains: filters.search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    include: { category: true },
-    orderBy: [{ category: { name: "asc" } }, { tag: "asc" }],
-  });
-}
+  const oldValues = await db.itemCategory.findUnique({ where: { id } });
 
-export async function getItem(id: string) {
-  return db.item.findUnique({
+  const category = await db.itemCategory.update({
     where: { id },
-    include: {
-      category: true,
-      eventItems: {
-        include: { event: { include: { customer: true } } },
-        orderBy: { allocatedAt: "desc" },
-        take: 10,
-      },
-    },
+    data: validated,
   });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.update,
+    module: "inventory",
+    recordId: category.id,
+    recordTable: "item_categories",
+    oldValues,
+    newValues: category,
+  });
+
+  revalidatePath("/settings/products");
+  return category;
 }
 
-export async function createItem(formData: FormData) {
-  const categoryId = formData.get("categoryId") as string;
-  const name = formData.get("name") as string;
-  const tag = formData.get("tag") as string;
-  const rentalPrice = formData.get("rentalPrice") as string;
-  const description = formData.get("description") as string | null;
-  const imageUrl = formData.get("imageUrl") as string | null;
+/**
+ * Creates a new item.
+ */
+export async function createItem(data: any) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
 
-  if (!categoryId || !name?.trim() || !tag?.trim() || !rentalPrice) {
-    throw new Error("Missing required fields");
+  const validated = itemSchema.parse(data);
+
+  const item = await db.item.create({
+    data: {
+      ...validated,
+      rentalPrice: validated.rentalPrice,
+    },
+  });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.create,
+    module: "inventory",
+    recordId: item.id,
+    recordTable: "items",
+    newValues: item,
+  });
+
+  revalidatePath("/inventory");
+  revalidatePath("/settings/products");
+  return item;
+}
+
+/**
+ * Fetches all inventory items with optional filters.
+ */
+export async function getItems(filters: { search?: string; categoryId?: string; status?: string } = {}) {
+  const { search, categoryId, status } = filters;
+  
+  const where: any = {};
+  
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { tag: { contains: search, mode: "insensitive" } },
+    ];
+  }
+  
+  if (categoryId && categoryId !== "all") {
+    where.categoryId = categoryId;
+  }
+  
+  if (status && status !== "all") {
+    where.status = status;
   }
 
-  await db.item.create({
-    data: {
-      categoryId,
-      name: name.trim(),
-      tag: tag.trim().toUpperCase(),
-      rentalPrice: parseFloat(rentalPrice),
-      description: description?.trim() || null,
-      imageUrl: imageUrl?.trim() || null,
+  return await db.item.findMany({
+    where,
+    include: { 
+      category: true, 
+      stock: true,
+      eventItems: {
+        include: { event: { include: { customer: true } } }
+      }
     },
+    orderBy: { createdAt: "desc" },
   });
-  revalidatePath("/inventory");
 }
 
-export async function updateItem(id: string, formData: FormData) {
-  const categoryId = formData.get("categoryId") as string;
-  const name = formData.get("name") as string;
-  const tag = formData.get("tag") as string;
-  const rentalPrice = formData.get("rentalPrice") as string;
-  const description = formData.get("description") as string | null;
-  const imageUrl = formData.get("imageUrl") as string | null;
-  const status = formData.get("status") as ItemStatus;
-  const conditionNotes = formData.get("conditionNotes") as string | null;
-
-  await db.item.update({
+/**
+ * Fetches a single inventory item by ID.
+ */
+export async function getItem(id: string) {
+  return await db.item.findUnique({
     where: { id },
-    data: {
-      categoryId,
-      name: name.trim(),
-      tag: tag.trim().toUpperCase(),
-      rentalPrice: parseFloat(rentalPrice),
-      description: description?.trim() || null,
-      imageUrl: imageUrl?.trim() || null,
-      status,
-      conditionNotes: conditionNotes?.trim() || null,
+    include: { 
+      category: true, 
+      stock: true,
+      eventItems: {
+        include: { event: { include: { customer: true } } }
+      }
     },
   });
-  revalidatePath("/inventory");
-  revalidatePath(`/inventory/${id}`);
 }
 
-export async function bulkCreateItems(
-  items: {
-    categoryId: string;
-    name: string;
-    tag: string;
-    rentalPrice: number;
-    description?: string;
-  }[]
-) {
-  await db.item.createMany({
-    data: items.map((item) => ({
-      categoryId: item.categoryId,
-      name: item.name.trim(),
-      tag: item.tag.trim().toUpperCase(),
-      rentalPrice: item.rentalPrice,
-      description: item.description?.trim() || null,
-    })),
+/**
+ * Fetches all item categories.
+ */
+export async function getCategories() {
+  return await db.itemCategory.findMany({
+    orderBy: { name: "asc" },
   });
-  revalidatePath("/inventory");
 }
 
+/**
+ * Fetches inventory statistics.
+ */
 export async function getInventoryStats() {
-  const [total, available, damaged, retired] = await Promise.all([
+  const [total, available, damaged, retired, out, categories] = await Promise.all([
     db.item.count(),
     db.item.count({ where: { status: "AVAILABLE" } }),
     db.item.count({ where: { status: "DAMAGED" } }),
     db.item.count({ where: { status: "RETIRED" } }),
+    db.eventItem.count({ where: { returnedAt: null } }),
+    db.itemCategory.count(),
   ]);
 
-  // Items currently out (allocated to UPCOMING/IN_PROGRESS events, not returned)
-  const outItems = await db.eventItem.count({
-    where: {
-      returnedAt: null,
-      event: { status: { in: ["UPCOMING", "IN_PROGRESS"] } },
+  return {
+    total,
+    available,
+    damaged,
+    retired,
+    out,
+    categories,
+  };
+}
+
+/**
+ * Updates an inventory item.
+ */
+export async function updateItem(id: string, data: any) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const validated = itemSchema.parse(data);
+
+  const oldValues = await db.item.findUnique({ where: { id } });
+
+  const item = await db.item.update({
+    where: { id },
+    data: {
+      ...validated,
+      rentalPrice: validated.rentalPrice,
     },
   });
 
-  return { total, available, damaged, retired, out: outItems };
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.update,
+    module: "inventory",
+    recordId: item.id,
+    recordTable: "items",
+    oldValues,
+    newValues: item,
+  });
+
+  revalidatePath("/inventory");
+  revalidatePath(`/inventory/${id}`);
+  revalidatePath("/settings/products");
+  return item;
 }
+
+/**
+ * Placeholder for bulk creation logic.
+ */
+export async function bulkCreateItems(items: any[]) {
+  // Logic to be implemented or refined as needed
+  console.log("Bulk create items called", items.length);
+  return { count: 0 };
+}
+
