@@ -106,9 +106,7 @@ function NavContent({
         if (collapsed) {
           return (
             <Tooltip key={item.href}>
-              <TooltipTrigger>
-                {link}
-              </TooltipTrigger>
+              <TooltipTrigger render={link} />
               <TooltipContent
                 side="right"
                 sideOffset={12}
@@ -146,7 +144,7 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <div
         style={{ width: isCollapsed ? 80 : 260 }}
-        className="sticky top-0 h-screen hidden md:flex flex-col z-40 bg-zinc-950 border-r border-zinc-800 overflow-hidden transition-[width] duration-200 ease-in-out"
+        className="sticky top-0 h-screen hidden md:flex flex-col z-40 bg-sidebar border-r border-sidebar-border overflow-hidden transition-[width] duration-200 ease-in-out"
       >
         <div className="flex h-16 items-center px-4 shrink-0">
           <div className={cn(
@@ -156,8 +154,8 @@ export function Sidebar() {
             <button
               onClick={() => isCollapsed && setIsCollapsed(false)}
               className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 text-white shadow-sm",
-                isCollapsed && "cursor-pointer hover:from-primary hover:to-primary/80 transition-colors"
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm",
+                isCollapsed && "cursor-pointer hover:bg-primary/90 transition-colors"
               )}
             >
               {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
@@ -172,14 +170,14 @@ export function Sidebar() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-base font-bold tracking-tight text-white leading-none">A&S Deco</span>
-                      <span className="text-[10px] font-medium text-white/40 uppercase tracking-widest mt-1">Management System</span>
+                      <span className="text-base font-bold tracking-tight text-sidebar-foreground leading-none">A&S Deco</span>
+                      <span className="text-[10px] font-medium text-sidebar-foreground/50 uppercase tracking-widest mt-1">Management System</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setIsCollapsed(true)}
-                      className="h-8 w-8 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors ml-2"
+                      className="h-8 w-8 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors ml-2"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -194,12 +192,12 @@ export function Sidebar() {
           <NavContent items={filteredItems} collapsed={isCollapsed} />
         </ScrollArea>
 
-        <div className="p-4 mt-auto border-t border-zinc-800 shrink-0">
+        <div className="p-4 mt-auto border-t border-sidebar-border shrink-0">
           <Button
             variant="ghost"
             onClick={() => signOut({ callbackUrl: "/login" })}
             className={cn(
-              "w-full justify-start gap-3 rounded-lg h-10 px-3 text-sm font-medium text-white/40 hover:bg-red-500/15 hover:text-red-300 transition-colors",
+              "w-full justify-start gap-3 rounded-lg h-10 px-3 text-sm font-medium text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-colors",
               isCollapsed && "h-12 w-12 justify-center mx-auto px-0"
             )}
           >
@@ -211,15 +209,15 @@ export function Sidebar() {
 
       {/* Mobile drawer */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="left" className="w-[280px] p-0 bg-zinc-950 border-r border-zinc-800">
-          <div className="flex h-16 items-center px-4 shrink-0 border-b border-zinc-800">
+        <SheetContent side="left" className="w-[280px] p-0 bg-sidebar border-r border-sidebar-border">
+          <div className="flex h-16 items-center px-4 shrink-0 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 text-white shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight text-white leading-none">A&S Decorations</span>
-                <span className="text-[10px] font-medium text-white/40 uppercase tracking-widest mt-1">Management</span>
+                <span className="text-base font-bold tracking-tight text-sidebar-foreground leading-none">A&S Decorations</span>
+                <span className="text-[10px] font-medium text-sidebar-foreground/50 uppercase tracking-widest mt-1">Management</span>
               </div>
             </div>
           </div>
@@ -229,11 +227,11 @@ export function Sidebar() {
               onNavigate={() => setIsOpen(false)}
             />
           </ScrollArea>
-          <div className="p-4 mt-auto border-t border-zinc-800">
+          <div className="p-4 mt-auto border-t border-sidebar-border">
             <Button
               variant="ghost"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="w-full justify-start gap-3 rounded-lg h-10 px-3 text-sm font-medium text-white/40 hover:bg-red-500/15 hover:text-red-300 transition-colors"
+              className="w-full justify-start gap-3 rounded-lg h-10 px-3 text-sm font-medium text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               <LogOut className="h-4.5 w-4.5 shrink-0" />
               <span>Log Out</span>

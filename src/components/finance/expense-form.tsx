@@ -61,12 +61,12 @@ export function ExpenseForm({
     }
   }
 
-  const selectClass = "flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
+  const selectClass = "flex h-10 w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
       <div className="space-y-2">
-        <Label htmlFor="categoryId" className="text-zinc-300">Category</Label>
+        <Label htmlFor="categoryId" className="text-foreground/80">Category</Label>
         <select id="categoryId" name="categoryId" className={selectClass} required>
           <option value="">Select Category</option>
           {categories.map((c) => (
@@ -76,7 +76,7 @@ export function ExpenseForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="locationId" className="text-zinc-300">Location (Optional)</Label>
+        <Label htmlFor="locationId" className="text-foreground/80">Location (Optional)</Label>
         <select id="locationId" name="locationId" className={selectClass}>
           <option value="">Global / N/A</option>
           {locations.map((l) => (
@@ -87,7 +87,7 @@ export function ExpenseForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="amount" className="text-zinc-300">Amount (₦)</Label>
+          <Label htmlFor="amount" className="text-foreground/80">Amount (₦)</Label>
           <Input
             id="amount"
             name="amount"
@@ -95,29 +95,29 @@ export function ExpenseForm({
             step="0.01"
             min="0.01"
             required
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 h-10"
+            className="bg-muted border-border text-foreground h-10"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="expenseDate" className="text-zinc-300">Date</Label>
+          <Label htmlFor="expenseDate" className="text-foreground/80">Date</Label>
           <Input
             id="expenseDate"
             name="expenseDate"
             type="date"
             defaultValue={new Date().toISOString().split("T")[0]}
             required
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 h-10"
+            className="bg-muted border-border text-foreground h-10"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description" className="text-zinc-300">Description (Optional)</Label>
+        <Label htmlFor="description" className="text-foreground/80">Description (Optional)</Label>
         <Textarea
           id="description"
           name="description"
-          className="bg-zinc-900 border-zinc-800 text-zinc-100 min-h-[80px]"
+          className="bg-muted border-border text-foreground min-h-[80px]"
         />
       </div>
 

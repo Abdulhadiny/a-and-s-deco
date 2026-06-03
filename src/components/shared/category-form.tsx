@@ -68,22 +68,22 @@ export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-zinc-300 font-semibold text-xs uppercase">Category Name</Label>
+        <Label htmlFor="name" className="text-foreground/80 font-semibold text-xs uppercase">Category Name</Label>
         <Input 
           id="name" 
           placeholder="e.g. Chairs, Lighting" 
-          className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 h-9"
+          className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70 h-9"
           {...register("name")} 
         />
         <FieldError error={errors.name} />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description" className="text-zinc-300 font-semibold text-xs uppercase">Description (Optional)</Label>
+        <Label htmlFor="description" className="text-foreground/80 font-semibold text-xs uppercase">Description (Optional)</Label>
         <Textarea 
           id="description" 
           placeholder="Short description..." 
-          className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 min-h-[80px] resize-none"
+          className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70 min-h-[80px] resize-none"
           {...register("description")} 
         />
         <FieldError error={errors.description} />

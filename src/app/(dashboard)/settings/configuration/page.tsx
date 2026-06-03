@@ -47,77 +47,77 @@ export default async function ConfigurationPage() {
 
       <form action={handleSave} className="space-y-6">
         {/* Business Info */}
-        <Card className="border-zinc-800 bg-zinc-950 shadow-sm">
-          <CardHeader className="border-b border-zinc-900 pb-4">
+        <Card className="border-border bg-card shadow-sm">
+          <CardHeader className="border-b border-border/50 pb-4">
             <div className="flex items-center gap-2 text-primary">
               <Building2 className="h-5 w-5" />
-              <CardTitle className="text-zinc-100">Business Information</CardTitle>
+              <CardTitle className="text-foreground">Business Information</CardTitle>
             </div>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-muted-foreground">
               Details used for invoices and quotes
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="company_name" className="text-zinc-300">Company Name</Label>
+              <Label htmlFor="company_name" className="text-foreground/80">Company Name</Label>
               <Input 
                 id="company_name" 
                 name="company_name"
                 defaultValue={getConfig("company_name", "A&S Decorations")} 
-                className="bg-zinc-900 border-zinc-800 text-zinc-100"
+                className="bg-muted border-border text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company_address" className="text-zinc-300">Business Address</Label>
+              <Label htmlFor="company_address" className="text-foreground/80">Business Address</Label>
               <Input 
                 id="company_address" 
                 name="company_address"
                 defaultValue={getConfig("company_address", "")} 
-                className="bg-zinc-900 border-zinc-800 text-zinc-100"
+                className="bg-muted border-border text-foreground"
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Financial Settings */}
-        <Card className="border-zinc-800 bg-zinc-950 shadow-sm">
-          <CardHeader className="border-b border-zinc-900 pb-4">
+        <Card className="border-border bg-card shadow-sm">
+          <CardHeader className="border-b border-border/50 pb-4">
             <div className="flex items-center gap-2 text-primary">
               <BadgePercent className="h-5 w-5" />
-              <CardTitle className="text-zinc-100">Financial Settings</CardTitle>
+              <CardTitle className="text-foreground">Financial Settings</CardTitle>
             </div>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-muted-foreground">
               Tax rates and default pricing rules
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 grid gap-6 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="tax_rate" className="text-zinc-300">Default VAT Rate (%)</Label>
+              <Label htmlFor="tax_rate" className="text-foreground/80">Default VAT Rate (%)</Label>
               <Input 
                 id="tax_rate" 
                 name="tax_rate"
                 type="number" 
                 step="0.01"
                 defaultValue={getConfig("tax_rate", 7.5)} 
-                className="bg-zinc-900 border-zinc-800 text-zinc-100"
+                className="bg-muted border-border text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency" className="text-zinc-300">System Currency</Label>
+              <Label htmlFor="currency" className="text-foreground/80">System Currency</Label>
               <Input 
                 id="currency" 
                 name="currency"
                 defaultValue={getConfig("currency", "NGN")} 
-                className="bg-zinc-900 border-zinc-800 text-zinc-100"
+                className="bg-muted border-border text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency_symbol" className="text-zinc-300">Currency Symbol</Label>
+              <Label htmlFor="currency_symbol" className="text-foreground/80">Currency Symbol</Label>
               <Input 
                 id="currency_symbol" 
                 name="currency_symbol"
                 defaultValue={getConfig("currency_symbol", "₦")} 
-                className="bg-zinc-900 border-zinc-800 text-zinc-100"
+                className="bg-muted border-border text-foreground"
               />
             </div>
           </CardContent>

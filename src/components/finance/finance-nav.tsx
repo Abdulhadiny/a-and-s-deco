@@ -13,7 +13,7 @@ const links = [
 export function FinanceNav() {
   const pathname = usePathname();
   return (
-    <nav className="mb-4 sm:mb-6 flex gap-1 rounded-lg bg-zinc-900 p-1 overflow-x-auto border border-zinc-800 w-fit">
+    <nav className="mb-4 sm:mb-6 flex gap-1 rounded-lg bg-muted p-1 overflow-x-auto border border-border w-fit">
       {links.map((link) => {
         const isActive =
           link.href === "/finance"
@@ -26,8 +26,8 @@ export function FinanceNav() {
             className={cn(
               "rounded-md px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap min-h-[36px] flex items-center",
               isActive
-                ? "bg-zinc-800 text-zinc-100 shadow-sm"
-                : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
+                ? "bg-accent text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
             )}
           >
             {link.label}

@@ -53,7 +53,7 @@ export function DataTable<T extends { id: string }>({
 }: DataTableProps<T>) {
   if (loading) {
     return (
-      <div className="space-y-3 p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
+      <div className="space-y-3 p-4 bg-card border border-border rounded-xl">
         <div className="hidden sm:flex items-center gap-4 mb-4">
           {columns.map((_, i) => (
             <Skeleton key={i} className="h-5 flex-1 rounded-md opacity-50" />
@@ -74,18 +74,18 @@ export function DataTable<T extends { id: string }>({
       {mobileCardView && (
         <div className="sm:hidden space-y-3 mb-4">
           {data.length === 0 ? (
-            <div className="py-12 bg-zinc-950 border border-zinc-800 rounded-xl text-center text-sm text-zinc-400">
+            <div className="py-12 bg-card border border-border rounded-xl text-center text-sm text-muted-foreground">
               {emptyMessage}
             </div>
           ) : (
             data.map((row) => (
-              <div key={row.id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2">
+              <div key={row.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
                 {visibleColumns.map((col) => (
-                  <div key={col.key} className="flex items-start justify-between gap-4 border-b border-zinc-900 pb-2 last:border-0 last:pb-0">
-                    <span className="text-xs text-zinc-500 shrink-0 mt-0.5 uppercase tracking-wider font-semibold">
+                  <div key={col.key} className="flex items-start justify-between gap-4 border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                    <span className="text-xs text-muted-foreground shrink-0 mt-0.5 uppercase tracking-wider font-semibold">
                       {col.header}
                     </span>
-                    <span className="text-sm font-medium text-zinc-200 text-right">{col.cell(row)}</span>
+                    <span className="text-sm font-medium text-foreground/90 text-right">{col.cell(row)}</span>
                   </div>
                 ))}
               </div>
@@ -96,18 +96,18 @@ export function DataTable<T extends { id: string }>({
 
       {/* Desktop table view */}
       <div className={cn(
-        "bg-zinc-950 border border-zinc-800 overflow-hidden rounded-xl",
+        "bg-card border border-border overflow-hidden rounded-xl",
         mobileCardView && "hidden sm:block",
         className
       )}>
         <Table>
-          <TableHeader className="bg-zinc-900/50 border-b border-zinc-800">
+          <TableHeader className="bg-muted/50 border-b border-border">
             <TableRow className="hover:bg-transparent border-none">
               {columns.map((col) => (
                 <TableHead
                   key={col.key}
                   className={cn(
-                    "h-11 px-4 text-xs font-bold uppercase tracking-widest text-zinc-500",
+                    "h-11 px-4 text-xs font-bold uppercase tracking-widest text-muted-foreground",
                     col.className
                   )}
                 >
@@ -125,10 +125,10 @@ export function DataTable<T extends { id: string }>({
                     className="h-40 text-center"
                   >
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="h-10 w-10 rounded-lg bg-zinc-900 flex items-center justify-center">
+                      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
                         <span className="text-xl">📦</span>
                       </div>
-                      <p className="text-sm text-zinc-500">
+                      <p className="text-sm text-muted-foreground">
                         {emptyMessage}
                       </p>
                     </div>
@@ -138,13 +138,13 @@ export function DataTable<T extends { id: string }>({
                 data.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="transition-colors border-b border-zinc-900 last:border-0 hover:bg-zinc-900/30 group"
+                    className="transition-colors border-b border-border/50 last:border-0 hover:bg-muted/30 group"
                   >
                     {columns.map((col) => (
                       <TableCell
                         key={col.key}
                         className={cn(
-                          "px-4 py-3 text-sm font-medium text-zinc-300 group-hover:text-white transition-colors",
+                          "px-4 py-3 text-sm font-medium text-foreground/80 group-hover:text-white transition-colors",
                           col.className
                         )}
                       >
@@ -172,16 +172,16 @@ function PaginationFooter({ page, totalPages, total, limit, onPageChange }: Pagi
   const end = Math.min(page * limit, total);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl">
-      <p className="text-sm font-medium text-zinc-500">
-        Showing <span className="text-zinc-200">{start}</span>–<span className="text-zinc-200">{end}</span> of{" "}
-        <span className="text-zinc-200">{total}</span> records
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-4 py-3 bg-card border border-border rounded-xl">
+      <p className="text-sm font-medium text-muted-foreground">
+        Showing <span className="text-foreground/90">{start}</span>–<span className="text-foreground/90">{end}</span> of{" "}
+        <span className="text-foreground/90">{total}</span> records
       </p>
       <div className="flex items-center gap-1.5">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-lg hover:bg-zinc-900 text-zinc-500 hover:text-zinc-200 transition-colors"
+          className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground/90 transition-colors"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
         >
@@ -191,7 +191,7 @@ function PaginationFooter({ page, totalPages, total, limit, onPageChange }: Pagi
         <div className="flex items-center gap-1">
           {getPageNumbers(page, totalPages).map((p, i) =>
             p === "..." ? (
-              <span key={`ellipsis-${i}`} className="px-1.5 text-xs text-zinc-600">...</span>
+              <span key={`ellipsis-${i}`} className="px-1.5 text-xs text-muted-foreground/70">...</span>
             ) : (
               <Button
                 key={p}
@@ -201,7 +201,7 @@ function PaginationFooter({ page, totalPages, total, limit, onPageChange }: Pagi
                   "h-8 w-8 rounded-lg text-xs font-bold transition-colors",
                   p === page
                     ? "bg-primary text-white shadow-sm hover:bg-primary/90"
-                    : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"
+                    : "text-muted-foreground hover:text-foreground/90 hover:bg-muted"
                 )}
                 onClick={() => onPageChange(p as number)}
               >
@@ -213,7 +213,7 @@ function PaginationFooter({ page, totalPages, total, limit, onPageChange }: Pagi
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-lg hover:bg-zinc-900 text-zinc-500 hover:text-zinc-200 transition-colors"
+          className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground/90 transition-colors"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
         >

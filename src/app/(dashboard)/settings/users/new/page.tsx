@@ -16,7 +16,7 @@ export default async function NewUserPage() {
         description="Add a new staff member and assign their role"
       />
 
-      <Card className="border-zinc-800 bg-zinc-950 shadow-sm overflow-hidden">
+      <Card className="border-border bg-card shadow-sm overflow-hidden">
         <CardContent className="pt-8">
           <UserForm roles={roles} locations={locations} />
         </CardContent>

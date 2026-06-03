@@ -34,17 +34,17 @@ export function ConfirmationDialog({
 }: ConfirmationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-950 border-zinc-800">
+      <DialogContent className="bg-card border-border">
         <DialogHeader>
-          <DialogTitle className={variant === "destructive" ? "text-rose-500" : "text-zinc-100"}>
+          <DialogTitle className={variant === "destructive" ? "text-rose-500" : "text-foreground"}>
             {title}
           </DialogTitle>
-          <DialogDescription className="pt-2 text-zinc-400">
+          <DialogDescription className="pt-2 text-muted-foreground">
             <span dangerouslySetInnerHTML={{ __html: description }} />
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-4 gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-zinc-800 text-zinc-400 hover:text-zinc-100">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-border text-muted-foreground hover:text-foreground">
             Cancel
           </Button>
           <Button

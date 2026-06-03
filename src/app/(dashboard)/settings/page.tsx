@@ -77,13 +77,13 @@ export default function SettingsPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredSections.map((section) => (
           <Link key={section.href} href={section.href} className="group">
-            <Card className="h-full cursor-pointer transition-colors hover:border-primary/30 border-zinc-800 bg-zinc-950">
+            <Card className="h-full cursor-pointer transition-colors hover:border-primary/30 border-border bg-card">
               <CardHeader>
                 <div className="mb-2 w-fit rounded-lg bg-primary/10 p-2.5 text-primary">
                   <section.icon className="h-5 w-5" />
                 </div>
-                <CardTitle className="text-zinc-100">{section.title}</CardTitle>
-                <CardDescription className="text-zinc-400 leading-relaxed">
+                <CardTitle className="text-foreground">{section.title}</CardTitle>
+                <CardDescription className="text-muted-foreground leading-relaxed">
                   {section.description}
                 </CardDescription>
               </CardHeader>

@@ -69,24 +69,24 @@ export function StatCard({ title, value, icon: Icon, description, trend, color, 
     <div className={cn("h-full", className)}>
       <div className={cn(
         "h-full border rounded-xl p-4 md:p-5 transition-colors",
-        cs ? cn(cs.card, cs.border) : "bg-zinc-950 border-zinc-800"
+        cs ? cn(cs.card, cs.border) : "bg-card border-border"
       )}>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-2 min-w-0 flex-1">
             <p className={cn(
               "text-xs font-semibold uppercase tracking-wider",
-              cs ? cs.label : "text-zinc-500"
+              cs ? cs.label : "text-muted-foreground"
             )}>
               {title}
             </p>
-            <h3 className="text-2xl font-extrabold tracking-tight text-zinc-100 truncate" title={tooltip}>
+            <h3 className="text-2xl font-extrabold tracking-tight text-foreground truncate" title={tooltip}>
               {value}
             </h3>
           </div>
 
           <div className={cn(
             "flex h-10 w-10 items-center justify-center rounded-lg border shrink-0",
-            cs ? cs.icon : "bg-zinc-900/50 text-zinc-400 border-zinc-800"
+            cs ? cs.icon : "bg-muted text-muted-foreground border-border"
           )}>
             <Icon className="h-5 w-5" />
           </div>
@@ -105,7 +105,7 @@ export function StatCard({ title, value, icon: Icon, description, trend, color, 
               </span>
             )}
             {description && (
-              <span className="text-xs font-medium text-zinc-500 truncate">
+              <span className="text-xs font-medium text-muted-foreground truncate">
                 {description}
               </span>
             )}

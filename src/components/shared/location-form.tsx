@@ -74,35 +74,35 @@ export function LocationForm({ initialData }: LocationFormProps) {
     <>
       <form onSubmit={handleSubmit(onPreSubmit)} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-zinc-300 font-semibold">Location Name</Label>
+          <Label htmlFor="name" className="text-foreground/80 font-semibold">Location Name</Label>
           <Input 
             id="name" 
             placeholder="e.g. Main Warehouse" 
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-primary/50"
+            className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70 focus:border-primary/50"
             {...register("name")} 
           />
           <FieldError error={errors.name} />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address" className="text-zinc-300 font-semibold">Address</Label>
+          <Label htmlFor="address" className="text-foreground/80 font-semibold">Address</Label>
           <Textarea 
             id="address" 
             placeholder="Detailed address or directions..." 
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-primary/50 min-h-[100px]"
+            className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70 focus:border-primary/50 min-h-[100px]"
             {...register("address")} 
           />
           <FieldError error={errors.address} />
         </div>
 
-        <div className="flex items-center gap-3 bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
+        <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg border border-border">
           <input 
             type="checkbox" 
             id="isActive" 
             {...register("isActive")} 
-            className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-primary focus:ring-primary focus:ring-offset-zinc-900" 
+            className="h-4 w-4 rounded border-border bg-muted text-primary focus:ring-primary focus:ring-offset-background" 
           />
-          <Label htmlFor="isActive" className="text-sm font-medium text-zinc-400 cursor-pointer">This location is active and available for use</Label>
+          <Label htmlFor="isActive" className="text-sm font-medium text-muted-foreground cursor-pointer">This location is active and available for use</Label>
         </div>
 
         <div className="flex gap-4 pt-4">
@@ -110,7 +110,7 @@ export function LocationForm({ initialData }: LocationFormProps) {
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {initialData ? "Update Location" : "Create Location"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => router.back()} className="border-zinc-800 text-zinc-400 hover:text-zinc-100 font-semibold">
+          <Button type="button" variant="outline" onClick={() => router.back()} className="border-border text-muted-foreground hover:text-foreground font-semibold">
             Cancel
           </Button>
         </div>

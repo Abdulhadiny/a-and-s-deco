@@ -10,7 +10,7 @@ export default function NewLocationPage() {
         description="Add a new warehouse, office, or event site to track inventory"
       />
 
-      <Card className="border-zinc-800 bg-zinc-950 shadow-sm overflow-hidden">
+      <Card className="border-border bg-card shadow-sm overflow-hidden">
         <CardContent className="pt-8">
           <LocationForm />
         </CardContent>

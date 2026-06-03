@@ -85,24 +85,24 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="amount" className="text-zinc-300 font-semibold text-xs uppercase tracking-wider">Amount (₦)</Label>
+            <Label htmlFor="amount" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Amount (₦)</Label>
             <Input 
               id="amount" 
               type="number"
               step="0.01"
               placeholder="0.00" 
-              className="bg-zinc-900 border-zinc-800 text-zinc-100 h-10 font-medium"
+              className="bg-muted border-border text-foreground h-10 font-medium"
               {...register("amount", { valueAsNumber: true })} 
             />
             <FieldError error={errors.amount} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="paymentDate" className="text-zinc-300 font-semibold text-xs uppercase tracking-wider">Payment Date</Label>
+            <Label htmlFor="paymentDate" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Payment Date</Label>
             <Input 
               id="paymentDate" 
               type="date"
-              className="bg-zinc-900 border-zinc-800 text-zinc-100 h-10"
+              className="bg-muted border-border text-foreground h-10"
               {...register("paymentDate")} 
             />
             <FieldError error={errors.paymentDate} />
@@ -111,10 +111,10 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="paymentMethod" className="text-zinc-300 font-semibold text-xs uppercase tracking-wider">Payment Method</Label>
+            <Label htmlFor="paymentMethod" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Payment Method</Label>
             <select
               id="paymentMethod"
-              className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="flex h-10 w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               {...register("paymentMethod")}
             >
               <option value="BANK_TRANSFER">Bank Transfer</option>
@@ -126,11 +126,11 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reference" className="text-zinc-300 font-semibold text-xs uppercase tracking-wider">Reference No.</Label>
+            <Label htmlFor="reference" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Reference No.</Label>
             <Input 
               id="reference" 
               placeholder="e.g. TRX-12345 (Optional)" 
-              className="bg-zinc-900 border-zinc-800 text-zinc-100 h-10"
+              className="bg-muted border-border text-foreground h-10"
               {...register("reference")} 
             />
             <FieldError error={errors.reference} />
@@ -138,11 +138,11 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="notes" className="text-zinc-300 font-semibold text-xs uppercase tracking-wider">Notes (Optional)</Label>
+          <Label htmlFor="notes" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Notes (Optional)</Label>
           <Textarea 
             id="notes" 
             placeholder="Additional details about this payment..." 
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 min-h-[80px] resize-none"
+            className="bg-muted border-border text-foreground min-h-[80px] resize-none"
             {...register("notes")} 
           />
           <FieldError error={errors.notes} />

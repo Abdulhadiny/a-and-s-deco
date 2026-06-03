@@ -111,20 +111,20 @@ export default async function FinanceOverviewPage() {
         />
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-950">
-        <CardHeader className="border-b border-zinc-900 pb-4">
-          <CardTitle className="text-base font-semibold text-zinc-100">Recent Transactions</CardTitle>
+      <Card className="border-border bg-card">
+        <CardHeader className="border-b border-border/50 pb-4">
+          <CardTitle className="text-base font-semibold text-foreground">Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           {recentTransactions.length === 0 ? (
-            <p className="text-sm text-zinc-500 text-center py-6">No transactions recorded yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-6">No transactions recorded yet.</p>
           ) : (
             <div className="space-y-4">
               {recentTransactions.map((t) => (
                 <div key={t.id} className="flex items-center justify-between group">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">{t.label}</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-sm font-medium text-foreground/90 group-hover:text-white transition-colors">{t.label}</p>
+                    <p className="text-xs text-muted-foreground">
                       {t.sublabel} — {formatDate(t.date)}
                     </p>
                   </div>
@@ -132,7 +132,7 @@ export default async function FinanceOverviewPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium border ${t.type === "Income" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"}`}>
                       {t.type}
                     </span>
-                    <span className="text-sm font-semibold text-zinc-300">
+                    <span className="text-sm font-semibold text-foreground/80">
                       {t.type === "Expense" ? "-" : "+"}{formatCurrency(t.amount)}
                     </span>
                   </div>

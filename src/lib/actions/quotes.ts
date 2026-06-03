@@ -4,6 +4,15 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { QuoteStatus } from "@/generated/prisma";
 
+export async function getQuotes() {
+  return db.quote.findMany({
+    include: {
+      event: { include: { customer: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function getQuote(id: string) {
   return db.quote.findUnique({
     where: { id },

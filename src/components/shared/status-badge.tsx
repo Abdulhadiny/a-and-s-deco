@@ -30,7 +30,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   },
   cancelled: { 
     label: "Cancelled", 
-    className: "bg-zinc-800 text-zinc-500 border-zinc-700 shadow-none grayscale" 
+    className: "bg-accent text-muted-foreground border-border shadow-none grayscale" 
   },
   // Item Statuses
   available: {
@@ -43,7 +43,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   },
   retired: {
     label: "Retired",
-    className: "bg-zinc-800 text-zinc-500 border-zinc-700",
+    className: "bg-accent text-muted-foreground border-border",
   },
   // General
   active: {
@@ -60,7 +60,7 @@ export function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
   const config = statusConfig[normalizedStatus] ?? {
     label: status,
-    className: "bg-zinc-800 text-zinc-400 border-zinc-700",
+    className: "bg-accent text-muted-foreground border-border",
   };
 
   return (

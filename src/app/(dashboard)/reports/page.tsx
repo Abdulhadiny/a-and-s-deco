@@ -2,10 +2,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DataTable, Column } from "@/components/shared/data-table";
-import { PackageOpen, AlertTriangle, TrendingUp, ShieldAlert } from "lucide-react";
-import { formatCurrency } from "@/lib/utils/currency";
+import { ReportsTables } from "./client";
 
 export const dynamic = "force-dynamic";
 
@@ -63,19 +60,6 @@ export default async function ReportsPage() {
     };
   });
 
-  const utilizationColumns: Column<any>[] = [
-    { key: "name", header: "Item Name", cell: (r) => <span className="font-semibold text-zinc-100">{r.name}</span> },
-    { key: "tag", header: "Tag", cell: (r) => <span className="text-zinc-500 font-mono text-xs">{r.tag}</span> },
-    { key: "qty", header: "Times Rented", cell: (r) => <span className="text-emerald-500 font-medium">{r.rentedQty}</span> },
-    { key: "rev", header: "Est. Revenue", cell: (r) => <span className="text-zinc-300">{formatCurrency(r.potentialRevenue)}</span> },
-  ];
-
-  const healthColumns: Column<any>[] = [
-    { key: "name", header: "Item Name", cell: (r) => <span className="font-semibold text-zinc-100">{r.name}</span> },
-    { key: "tag", header: "Tag", cell: (r) => <span className="text-zinc-500 font-mono text-xs">{r.tag}</span> },
-    { key: "issues", header: "Damaged / Missing Qty", cell: (r) => <span className="text-rose-500 font-bold">{r.issuesQty}</span> },
-  ];
-
   return (
     <div className="space-y-8 pb-12">
       <PageHeader
@@ -83,53 +67,7 @@ export default async function ReportsPage() {
         description="Analytics on item utilization and stock health."
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Utilization */}
-        <Card className="border-zinc-800 bg-zinc-950 flex flex-col h-full">
-          <CardHeader className="border-b border-zinc-900 pb-4">
-            <CardTitle className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-500" />
-              Top Utilized Items
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Most frequently rented items by total quantity out.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-auto rounded-xl border border-zinc-800">
-              <DataTable
-                columns={utilizationColumns}
-                data={topUtilized}
-                emptyMessage="Not enough rental data yet."
-                mobileCardView={false}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stock Health */}
-        <Card className="border-zinc-800 bg-zinc-950 flex flex-col h-full">
-          <CardHeader className="border-b border-zinc-900 pb-4">
-            <CardTitle className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-rose-500" />
-              Stock Health Warnings
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Items frequently returned damaged or missing.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-auto rounded-xl border border-zinc-800">
-              <DataTable
-                columns={healthColumns}
-                data={stockHealth}
-                emptyMessage="All items are in good health."
-                mobileCardView={false}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ReportsTables topUtilized={topUtilized} stockHealth={stockHealth} />
     </div>
   );
 }

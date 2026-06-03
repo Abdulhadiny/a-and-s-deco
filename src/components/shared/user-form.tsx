@@ -88,23 +88,23 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
     <>
       <form onSubmit={handleSubmit(onPreSubmit)} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-zinc-300 font-semibold">Full Name</Label>
+          <Label htmlFor="name" className="text-foreground/80 font-semibold">Full Name</Label>
           <Input 
             id="name" 
             placeholder="John Doe" 
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600"
+            className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70"
             {...register("name")} 
           />
           <FieldError error={errors.name} />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-zinc-300 font-semibold">Email Address</Label>
+          <Label htmlFor="email" className="text-foreground/80 font-semibold">Email Address</Label>
           <Input 
             id="email" 
             type="email"
             placeholder="john@asdeco.com" 
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600"
+            className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70"
             {...register("email")} 
           />
           <FieldError error={errors.email} />
@@ -112,13 +112,13 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
 
         <div className="space-y-2">
           <Label htmlFor="password" title={initialData ? "Leave blank to keep current password" : ""}>
-            <span className="text-zinc-300 font-semibold">{initialData ? "New Password (optional)" : "Password"}</span>
+            <span className="text-foreground/80 font-semibold">{initialData ? "New Password (optional)" : "Password"}</span>
           </Label>
           <Input 
             id="password" 
             type="password"
             placeholder="••••••••" 
-            className="bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600"
+            className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70"
             {...register("password")} 
           />
           <FieldError error={errors.password} />
@@ -126,16 +126,16 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label className="text-zinc-300 font-semibold">Role</Label>
+            <Label className="text-foreground/80 font-semibold">Role</Label>
             <Controller
               control={control}
               name="roleId"
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                  <SelectTrigger className="bg-muted border-border text-foreground">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-100">
+                  <SelectContent className="bg-card border-border text-foreground">
                     {roles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>{role.displayName}</SelectItem>
                     ))}
@@ -147,16 +147,16 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-zinc-300 font-semibold">Primary Location</Label>
+            <Label className="text-foreground/80 font-semibold">Primary Location</Label>
             <Controller
               control={control}
               name="locationId"
               render={({ field }) => (
                 <Select value={field.value || ""} onValueChange={(v) => field.onChange(v || null)}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                  <SelectTrigger className="bg-muted border-border text-foreground">
                     <SelectValue placeholder="Global (All locations)" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-100">
+                  <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="null">Global (All locations)</SelectItem>
                     {locations.map((loc) => (
                       <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
@@ -169,14 +169,14 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
+        <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg border border-border">
           <input 
             type="checkbox" 
             id="isActive" 
             {...register("isActive")} 
-            className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-primary focus:ring-primary focus:ring-offset-zinc-900" 
+            className="h-4 w-4 rounded border-border bg-muted text-primary focus:ring-primary focus:ring-offset-background" 
           />
-          <Label htmlFor="isActive" className="text-sm font-medium text-zinc-400 cursor-pointer">Active account (allows login)</Label>
+          <Label htmlFor="isActive" className="text-sm font-medium text-muted-foreground cursor-pointer">Active account (allows login)</Label>
         </div>
 
         <div className="flex gap-4 pt-4">
@@ -184,7 +184,7 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {initialData ? "Update User" : "Create User"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => router.back()} className="border-zinc-800 text-zinc-400 hover:text-zinc-100 font-semibold">
+          <Button type="button" variant="outline" onClick={() => router.back()} className="border-border text-muted-foreground hover:text-foreground font-semibold">
             Cancel
           </Button>
         </div>

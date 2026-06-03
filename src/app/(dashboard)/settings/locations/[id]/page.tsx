@@ -25,7 +25,7 @@ export default async function EditLocationPage({ params }: EditLocationPageProps
         description={`Modify settings for ${location.name}`}
       />
 
-      <Card className="border-zinc-800 bg-zinc-950 shadow-sm overflow-hidden">
+      <Card className="border-border bg-card shadow-sm overflow-hidden">
         <CardContent className="pt-8">
           <LocationForm initialData={location} />
         </CardContent>

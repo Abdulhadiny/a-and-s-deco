@@ -28,7 +28,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
         description={`Modify settings for ${user.name}`}
       />
 
-      <Card className="border-zinc-800 bg-zinc-950 shadow-sm overflow-hidden">
+      <Card className="border-border bg-card shadow-sm overflow-hidden">
         <CardContent className="pt-8">
           <UserForm initialData={user} roles={roles} locations={locations} />
         </CardContent>
