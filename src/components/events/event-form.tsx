@@ -34,6 +34,7 @@ interface Customer {
 interface EventData {
   id: string;
   customerId: string;
+  locationId?: string | null;
   title: string;
   eventType: string;
   eventDate: string | Date;
@@ -45,6 +46,7 @@ interface EventData {
 
 interface EventFormProps {
   customers: Customer[];
+  locations?: { id: string; name: string }[];
   event?: EventData;
   mode?: "create" | "edit";
 }
@@ -70,6 +72,7 @@ function toDateInputValue(date: string | Date | null | undefined): string {
 
 export function EventForm({
   customers: initialCustomers,
+  locations = [],
   event,
   mode = "create",
 }: EventFormProps) {
@@ -81,6 +84,7 @@ export function EventForm({
   const [customers, setCustomers] = useState(initialCustomers);
   const [customerId, setCustomerId] = useState(event?.customerId ?? "");
   const [eventType, setEventType] = useState(event?.eventType ?? "");
+  const [locationId, setLocationId] = useState(event?.locationId ?? "");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -90,6 +94,9 @@ export function EventForm({
     const formData = new FormData(e.currentTarget);
     formData.set("customerId", customerId);
     formData.set("eventType", eventType);
+    if (locationId) {
+      formData.set("locationId", locationId);
+    }
 
     if (!customerId) {
       setError("Please select a customer.");
@@ -178,8 +185,29 @@ export function EventForm({
           </select>
         </div>
 
+        {/* Location / Warehouse */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Origin Warehouse / Location</Label>
+          <select
+            className={selectClass}
+            value={locationId}
+            onChange={(e) => setLocationId(e.target.value)}
+            disabled={isPending}
+            aria-label="Location"
+          >
+            <option value="">
+              Main Warehouse (Default)
+            </option>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Title */}
-        <div className="flex flex-col gap-1.5 sm:col-span-2">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="event-title">Title</Label>
           <Input
             id="event-title"

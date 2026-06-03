@@ -131,9 +131,10 @@ export default async function EventDetailPage({
 }) {
   const { id } = await params;
 
-  const [event, customers] = await Promise.all([
+  const [event, customers, locations] = await Promise.all([
     getEvent(id),
     getCustomers(),
+    import("@/lib/db").then((m) => m.db.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } })),
   ]);
 
   if (!event) {
@@ -337,9 +338,11 @@ export default async function EventDetailPage({
                   name: c.name,
                   phone: c.phone,
                 }))}
+                locations={locations}
                 event={{
                   id: event.id,
                   customerId: event.customerId,
+                  locationId: event.locationId,
                   title: event.title,
                   eventType: event.eventType,
                   eventDate: event.eventDate,

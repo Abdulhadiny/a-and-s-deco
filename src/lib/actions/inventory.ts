@@ -6,6 +6,7 @@ import { logAction } from "@/lib/audit";
 import { AuditAction } from "@/generated/prisma";
 import { categorySchema, itemSchema } from "@/lib/validators";
 import { revalidatePath } from "next/cache";
+import { InventoryEngine } from "@/lib/engines/inventory-engine";
 
 /**
  * Creates a new item category.
@@ -64,33 +65,53 @@ export async function updateCategory(id: string, data: any) {
 }
 
 /**
- * Creates a new item.
+ * Creates a new item and optionally initializes its stock.
  */
 export async function createItem(data: any) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
   const validated = itemSchema.parse(data);
+  const initialQuantity = parseInt(data.initialQuantity || "0", 10);
+  const locationId = data.locationId || "main-warehouse";
 
-  const item = await db.item.create({
-    data: {
-      ...validated,
-      rentalPrice: validated.rentalPrice,
-    },
-  });
+  const result = await db.$transaction(async (tx) => {
+    const item = await tx.item.create({
+      data: {
+        ...validated,
+        rentalPrice: validated.rentalPrice,
+      },
+    });
 
-  await logAction({
-    userId: session.user.id!,
-    action: AuditAction.create,
-    module: "inventory",
-    recordId: item.id,
-    recordTable: "items",
-    newValues: item,
+    if (initialQuantity > 0) {
+      await InventoryEngine.credit({
+        storeCode: "MAIN",
+        itemId: item.id,
+        quantity: initialQuantity,
+        locationId,
+        referenceType: "INITIAL_STOCK",
+        referenceId: item.id,
+        createdBy: session.user.id!,
+        notes: "Initial stock entry",
+        tx,
+      });
+    }
+
+    await logAction({
+      userId: session.user.id!,
+      action: AuditAction.create,
+      module: "inventory",
+      recordId: item.id,
+      recordTable: "items",
+      newValues: item,
+    });
+
+    return item;
   });
 
   revalidatePath("/inventory");
   revalidatePath("/settings/products");
-  return item;
+  return result;
 }
 
 /**
@@ -213,11 +234,52 @@ export async function updateItem(id: string, data: any) {
 }
 
 /**
- * Placeholder for bulk creation logic.
+ * Bulk create items and initialize their stock.
  */
 export async function bulkCreateItems(items: any[]) {
-  // Logic to be implemented or refined as needed
-  console.log("Bulk create items called", items.length);
-  return { count: 0 };
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  return await db.$transaction(async (tx) => {
+    let count = 0;
+    for (const itemData of items) {
+      const { initialQuantity, locationId, ...rest } = itemData;
+      const validated = itemSchema.parse(rest);
+
+      const item = await tx.item.create({
+        data: {
+          ...validated,
+          rentalPrice: validated.rentalPrice,
+        },
+      });
+
+      if (initialQuantity && initialQuantity > 0) {
+        await InventoryEngine.credit({
+          storeCode: "MAIN",
+          itemId: item.id,
+          quantity: initialQuantity,
+          locationId: locationId || "main-warehouse",
+          referenceType: "INITIAL_STOCK",
+          referenceId: item.id,
+          createdBy: session.user.id!,
+          notes: "Initial stock entry from bulk add",
+          tx,
+        });
+      }
+
+      await logAction({
+        userId: session.user.id!,
+        action: AuditAction.create,
+        module: "inventory",
+        recordId: item.id,
+        recordTable: "items",
+        newValues: item,
+      });
+
+      count++;
+    }
+
+    return { count };
+  });
 }
 

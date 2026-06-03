@@ -29,14 +29,20 @@ interface Category {
   name: string;
 }
 
+interface Location {
+  id: string;
+  name: string;
+}
+
 interface NewItemFormProps {
   categories: Category[];
+  locations?: Location[];
 }
 
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function NewItemForm({ categories: initialCategories }: NewItemFormProps) {
+export function NewItemForm({ categories: initialCategories, locations = [] }: NewItemFormProps) {
   const [categories, setCategories] = useState(initialCategories);
   const [tab, setTab] = useState("single");
 
@@ -49,12 +55,14 @@ export function NewItemForm({ categories: initialCategories }: NewItemFormProps)
       <TabsContent value="single">
         <SingleItemForm
           categories={categories}
+          locations={locations}
           onCategoriesChange={setCategories}
         />
       </TabsContent>
       <TabsContent value="bulk">
         <BulkAddForm
           categories={categories}
+          locations={locations}
           onCategoriesChange={setCategories}
         />
       </TabsContent>
@@ -66,15 +74,18 @@ export function NewItemForm({ categories: initialCategories }: NewItemFormProps)
 
 function SingleItemForm({
   categories,
+  locations,
   onCategoriesChange,
 }: {
   categories: Category[];
+  locations: Location[];
   onCategoriesChange: (cats: Category[]) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState("");
+  const [locationId, setLocationId] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -82,10 +93,11 @@ function SingleItemForm({
 
     const formData = new FormData(e.currentTarget);
     formData.set("categoryId", categoryId);
+    if (locationId) formData.set("locationId", locationId);
 
     startTransition(async () => {
       try {
-        await createItem(formData);
+        await createItem(Object.fromEntries(formData.entries()));
         router.push("/inventory");
       } catch (err) {
         setError(
@@ -129,6 +141,27 @@ function SingleItemForm({
           </div>
         </div>
 
+        {/* Location */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Initial Stock Location</Label>
+          <select
+            className={selectClass}
+            value={locationId}
+            onChange={(e) => setLocationId(e.target.value)}
+            disabled={isPending}
+            aria-label="Location"
+          >
+            <option value="">
+              Main Warehouse (Default)
+            </option>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Name */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="single-name">Name</Label>
@@ -151,6 +184,20 @@ function SingleItemForm({
             disabled={isPending}
             placeholder="e.g. CHAN-001"
             className="uppercase"
+          />
+        </div>
+
+        {/* Initial Quantity */}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="single-qty">Initial Quantity</Label>
+          <Input
+            id="single-qty"
+            name="initialQuantity"
+            type="number"
+            min="0"
+            step="1"
+            disabled={isPending}
+            placeholder="0"
           />
         </div>
 
@@ -206,20 +253,24 @@ function SingleItemForm({
 
 function BulkAddForm({
   categories,
+  locations,
   onCategoriesChange,
 }: {
   categories: Category[];
+  locations: Location[];
   onCategoriesChange: (cats: Category[]) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState("");
+  const [locationId, setLocationId] = useState("");
   const [baseName, setBaseName] = useState("");
   const [tagPrefix, setTagPrefix] = useState("");
   const [startNumber, setStartNumber] = useState(1);
   const [count, setCount] = useState(1);
   const [rentalPrice, setRentalPrice] = useState("");
+  const [initialQuantity, setInitialQuantity] = useState("1");
 
   // Preview the tags that will be generated
   const previewTags = Array.from({ length: Math.min(count, 10) }, (_, i) => {
@@ -251,6 +302,8 @@ function BulkAddForm({
         name: `${baseName.trim()} ${num}`,
         tag: `${tagPrefix.trim().toUpperCase()}-${String(num).padStart(3, "0")}`,
         rentalPrice: parseFloat(rentalPrice),
+        initialQuantity: parseInt(initialQuantity || "0", 10),
+        locationId: locationId || undefined,
       };
     });
 
@@ -300,6 +353,27 @@ function BulkAddForm({
           </div>
         </div>
 
+        {/* Location */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Initial Stock Location</Label>
+          <select
+            className={selectClass}
+            value={locationId}
+            onChange={(e) => setLocationId(e.target.value)}
+            disabled={isPending}
+            aria-label="Location"
+          >
+            <option value="">
+              Main Warehouse (Default)
+            </option>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Base Name */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="bulk-name">Base Name</Label>
@@ -347,7 +421,7 @@ function BulkAddForm({
 
         {/* Count */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="bulk-count">Count</Label>
+          <Label htmlFor="bulk-count">Items to Create</Label>
           <Input
             id="bulk-count"
             type="number"
@@ -373,6 +447,21 @@ function BulkAddForm({
             required
             disabled={isPending}
             placeholder="0.00"
+          />
+        </div>
+
+        {/* Initial Quantity (Per Item) */}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="bulk-qty">Initial Qty (per item)</Label>
+          <Input
+            id="bulk-qty"
+            type="number"
+            min="0"
+            step="1"
+            value={initialQuantity}
+            onChange={(e) => setInitialQuantity(e.target.value)}
+            disabled={isPending}
+            placeholder="1"
           />
         </div>
       </div>

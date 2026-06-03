@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCategories } from "@/lib/actions/inventory";
+import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
@@ -8,7 +9,10 @@ import { NewItemForm } from "@/components/inventory/new-item-form";
 type CategoryEntry = Awaited<ReturnType<typeof getCategories>>[number];
 
 export default async function NewItemPage() {
-  const categories = await getCategories();
+  const [categories, locations] = await Promise.all([
+    getCategories(),
+    db.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,6 +48,7 @@ export default async function NewItemPage() {
         <CardContent>
           <NewItemForm
             categories={categories.map((c: CategoryEntry) => ({ id: c.id, name: c.name }))}
+            locations={locations.map(l => ({ id: l.id, name: l.name }))}
           />
         </CardContent>
       </Card>

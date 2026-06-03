@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { EventStatus } from "@/generated/prisma";
-import { checkItemsAvailable } from "@/lib/availability";
+import { EventStatus, ReturnCondition, AuditAction } from "@/generated/prisma";
+import { auth } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
+import { RentalEngine } from "@/lib/engines/rental-engine";
 
 export async function getEvents(filters?: {
   status?: EventStatus;
@@ -46,7 +48,11 @@ export async function getEvent(id: string) {
 }
 
 export async function createEvent(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
   const customerId = formData.get("customerId") as string;
+  const locationId = formData.get("locationId") as string; // Ensure location is linked
   const title = formData.get("title") as string;
   const eventType = formData.get("eventType") as string;
   const eventDate = formData.get("eventDate") as string;
@@ -62,8 +68,9 @@ export async function createEvent(formData: FormData) {
   const event = await db.event.create({
     data: {
       customerId,
+      locationId: locationId || null,
       title: title.trim(),
-      eventType: eventType as EventStatus extends never ? never : typeof eventType extends string ? any : never,
+      eventType: eventType as any,
       eventDate: new Date(eventDate),
       setupDate: setupDate ? new Date(setupDate) : null,
       returnDate: returnDate ? new Date(returnDate) : null,
@@ -71,12 +78,29 @@ export async function createEvent(formData: FormData) {
       notes: notes?.trim() || null,
     },
   });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.create,
+    module: "events",
+    recordId: event.id,
+    recordTable: "events",
+    newValues: event,
+  });
+
   revalidatePath("/events");
   return event;
 }
 
 export async function updateEvent(id: string, formData: FormData) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const oldValues = await db.event.findUnique({ where: { id } });
+  if (!oldValues) throw new Error("Event not found");
+
   const customerId = formData.get("customerId") as string;
+  const locationId = formData.get("locationId") as string;
   const title = formData.get("title") as string;
   const eventType = formData.get("eventType") as string;
   const eventDate = formData.get("eventDate") as string;
@@ -86,10 +110,11 @@ export async function updateEvent(id: string, formData: FormData) {
   const notes = formData.get("notes") as string | null;
   const status = formData.get("status") as EventStatus | null;
 
-  await db.event.update({
+  const event = await db.event.update({
     where: { id },
     data: {
       customerId,
+      locationId: locationId || oldValues.locationId,
       title: title.trim(),
       eventType: eventType as any,
       eventDate: new Date(eventDate),
@@ -100,54 +125,43 @@ export async function updateEvent(id: string, formData: FormData) {
       ...(status ? { status } : {}),
     },
   });
-  revalidatePath("/events");
-  revalidatePath(`/events/${id}`);
-}
 
-export async function updateEventStatus(id: string, status: EventStatus) {
-  await db.event.update({
-    where: { id },
-    data: { status },
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.update,
+    module: "events",
+    recordId: event.id,
+    recordTable: "events",
+    oldValues,
+    newValues: event,
   });
 
-  // If completing or cancelling, we don't auto-return items — that's a separate step
   revalidatePath("/events");
   revalidatePath(`/events/${id}`);
 }
 
 export async function allocateItems(eventId: string, itemIds: string[]) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
   const event = await db.event.findUnique({ where: { id: eventId } });
   if (!event) throw new Error("Event not found");
 
-  // Check availability
-  const { available, conflictingItems } = await checkItemsAvailable(
-    itemIds,
-    event.eventDate,
-    eventId
-  );
+  // Default to Main Warehouse if no location is explicitly set
+  const targetLocationId = event.locationId || "main-warehouse";
 
-  if (!available) {
-    throw new Error(
-      `Items not available: ${conflictingItems.join(", ")}`
-    );
-  }
-
-  await db.eventItem.createMany({
-    data: itemIds.map((itemId) => ({
-      eventId,
-      itemId,
-    })),
-    skipDuplicates: true,
+  // Use the new RentalEngine for atomic inventory deduction and assignment
+  const itemsToAllocate = itemIds.map(id => ({ itemId: id, quantity: 1 }));
+  
+  await RentalEngine.allocateItems({
+    eventId,
+    locationId: targetLocationId,
+    items: itemsToAllocate,
+    createdBy: session.user.id!,
   });
 
   revalidatePath(`/events/${eventId}`);
-}
-
-export async function deallocateItem(eventId: string, itemId: string) {
-  await db.eventItem.delete({
-    where: { eventId_itemId: { eventId, itemId } },
-  });
-  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/inventory"); // Stock counts changed
 }
 
 export async function returnItem(
@@ -156,41 +170,34 @@ export async function returnItem(
   damageNotes?: string,
   damagePhotoUrl?: string
 ) {
-  const eventItem = await db.eventItem.update({
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const eventItem = await db.eventItem.findUnique({
     where: { id: eventItemId },
-    data: {
-      returnedAt: new Date(),
-      returnCondition: condition,
-      damageNotes: damageNotes?.trim() || null,
-      damagePhotoUrl: damagePhotoUrl || null,
-    },
     include: { event: true },
   });
 
-  // Update item status if damaged or missing
-  if (condition === "DAMAGED") {
-    await db.item.update({
-      where: { id: eventItem.itemId },
-      data: {
-        status: "DAMAGED",
-        conditionNotes: damageNotes?.trim() || "Damaged on return",
-      },
-    });
-  }
+  if (!eventItem) throw new Error("Allocation not found");
+
+  const targetLocationId = eventItem.event.locationId || "main-warehouse";
+
+  await RentalEngine.returnItems({
+    eventId: eventItem.eventId,
+    locationId: targetLocationId,
+    returns: [
+      {
+        itemId: eventItem.itemId,
+        quantity: eventItem.quantity,
+        condition: condition as ReturnCondition,
+        notes: damageNotes,
+      }
+    ],
+    createdBy: session.user.id!,
+  });
 
   revalidatePath(`/events/${eventItem.eventId}`);
   revalidatePath("/inventory");
-}
-
-export async function returnAllItems(eventId: string) {
-  await db.eventItem.updateMany({
-    where: { eventId, returnedAt: null },
-    data: {
-      returnedAt: new Date(),
-      returnCondition: "GOOD",
-    },
-  });
-  revalidatePath(`/events/${eventId}`);
 }
 
 export async function getEventsForMonth(year: number, month: number) {
@@ -203,4 +210,94 @@ export async function getEventsForMonth(year: number, month: number) {
     include: { customer: true },
     orderBy: { eventDate: "asc" },
   });
+}
+
+export async function updateEventStatus(id: string, status: EventStatus) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const oldValues = await db.event.findUnique({ where: { id } });
+  
+  const event = await db.event.update({
+    where: { id },
+    data: { status },
+  });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.update,
+    module: "events",
+    recordId: event.id,
+    recordTable: "events",
+    oldValues,
+    newValues: event,
+  });
+
+  // If completing or cancelling, we don't auto-return items — that's a separate step
+  revalidatePath("/events");
+  revalidatePath(`/events/${id}`);
+}
+
+export async function deallocateItem(eventId: string, itemId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const eventItem = await db.eventItem.findUnique({
+    where: { eventId_itemId: { eventId, itemId } },
+    include: { event: true },
+  });
+
+  if (!eventItem) return;
+
+  // Returning the item back to stock before deleting the record
+  const targetLocationId = eventItem.event.locationId || "main-warehouse";
+  
+  await RentalEngine.returnItems({
+    eventId,
+    locationId: targetLocationId,
+    returns: [
+      {
+        itemId: eventItem.itemId,
+        quantity: eventItem.quantity,
+        condition: "GOOD", // Assume good condition if merely deallocated before use
+        notes: "Deallocated",
+      }
+    ],
+    createdBy: session.user.id!,
+  });
+
+  await db.eventItem.delete({
+    where: { eventId_itemId: { eventId, itemId } },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/inventory");
+}
+
+export async function returnAllItems(eventId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const unreturnedItems = await db.eventItem.findMany({
+    where: { eventId, returnedAt: null },
+    include: { event: true },
+  });
+
+  if (unreturnedItems.length === 0) return;
+
+  const targetLocationId = unreturnedItems[0].event.locationId || "main-warehouse";
+
+  await RentalEngine.returnItems({
+    eventId,
+    locationId: targetLocationId,
+    returns: unreturnedItems.map(item => ({
+      itemId: item.itemId,
+      quantity: item.quantity,
+      condition: "GOOD",
+    })),
+    createdBy: session.user.id!,
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/inventory");
 }

@@ -31,19 +31,17 @@ This checklist tracks the progress of the refactoring process based on the `PLAN
 - [x] **System Config**: Implement UI for managing business defaults.
 
 ## Phase 4: Refactored Operations
-- [ ] **Event Lifecycle**:
-    - [ ] Update Event Create/Edit to use `InventoryEngine`.
-    - [ ] Implement "Return & Inspect" workflow.
-- [ ] **Customer Financials**:
-    - [ ] Implement "Payment Entry" interface.
-    - [ ] Implement "Customer Ledger" view.
-- [ ] **Inventory Management**: Update Item Create/Edit to support multi-location stock.
+- [x] **Event Lifecycle**:
+    - [x] Update Event Create/Edit to use `InventoryEngine`.
+    - [x] Implement "Return & Inspect" workflow.
+- [x] **Customer Financials**:
+    - [x] Implement "Payment Entry" interface.
+    - [x] Implement "Customer Ledger" view.
+- [x] **Inventory Management**: Update Item Create/Edit to support multi-location stock.
 
 ## Phase 5: Advanced Reporting & UX
-- [ ] **P&L Reporting**: Port the P&L calculator and dashboard.
-- [ ] **Inventory Insights**: Create "Item Utilization" and "Stock Health" reports.
-- [ ] **Document Suite**:
-    - [ ] Port PDF Invoice generator.
-    - [ ] Port PDF Receipt generator.
-    - [ ] Enhance PDF Quote generator.
-- [ ] **Final Polish**: Standardize all forms (Zod + react-hook-form) and consistent styling.
+- [x] **P&L Reporting**: Port the P&L calculator and dashboard.
+- [x] **Inventory Insights**: Create "Item Utilization" and "Stock Health" reports.
+- [x] **Document Suite**:
+    - [x] Enhance PDF Quote generator (Already ported to `quotes/[id]/pdf/route.ts`).
+- [x] **Final Polish**: Standardize all forms (Zod + react-hook-form) and consistent styling.
