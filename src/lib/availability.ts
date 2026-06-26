@@ -1,68 +1,57 @@
 import { db } from "@/lib/db";
-import { Prisma } from "@/generated/prisma";
 
 /**
- * Get items available on a specific date (not allocated to any UPCOMING/IN_PROGRESS event
- * whose date range overlaps the target date).
+ * Get items available on a specific date at a specific location
+ * (checks if the item has currentQty > 0 in the MAIN store at the target location).
  */
 export async function getAvailableItems(
   targetDate: Date,
   categoryId?: string,
-  excludeEventId?: string
+  excludeEventId?: string,
+  locationId?: string
 ) {
-  const dateStr = targetDate.toISOString().split("T")[0];
+  const targetLocation = locationId || "main-warehouse";
 
-  // Items that are committed on the target date
-  const committedItemIds = await db.eventItem.findMany({
-    where: {
-      returnedAt: null,
-      event: {
-        status: { in: ["UPCOMING", "IN_PROGRESS"] },
-        ...(excludeEventId ? { id: { not: excludeEventId } } : {}),
-        // Event overlaps target date if:
-        // setupDate (or eventDate) <= targetDate AND returnDate (or eventDate) >= targetDate
-        AND: [
-          {
-            OR: [
-              { setupDate: { lte: targetDate } },
-              { AND: [{ setupDate: null }, { eventDate: { lte: targetDate } }] },
-            ],
-          },
-          {
-            OR: [
-              { returnDate: { gte: targetDate } },
-              { AND: [{ returnDate: null }, { eventDate: { gte: targetDate } }] },
-            ],
-          },
-        ],
-      },
-    },
-    select: { itemId: true },
-  });
-
-  const committedIds = committedItemIds.map((ei) => ei.itemId);
-
-  return db.item.findMany({
+  // Fetch items and check their stock records at the target location
+  const items = await db.item.findMany({
     where: {
       status: "AVAILABLE",
       ...(categoryId ? { categoryId } : {}),
-      ...(committedIds.length > 0 ? { id: { notIn: committedIds } } : {}),
     },
-    include: { category: true },
+    include: {
+      category: true,
+      stock: {
+        where: {
+          locationId: targetLocation,
+          store: { storeCode: "MAIN" },
+        },
+      },
+    },
     orderBy: [{ category: { name: "asc" } }, { tag: "asc" }],
+  });
+
+  // Filter items that have stock quantity > 0 at this location
+  return items.filter((item) => {
+    const mainStock = item.stock[0];
+    return mainStock && mainStock.currentQty > 0;
   });
 }
 
 /**
- * Get availability summary per category for a date.
+ * Get availability summary per category for a date at a specific location.
  */
-export async function getAvailabilitySummary(targetDate: Date, excludeEventId?: string) {
+export async function getAvailabilitySummary(
+  targetDate: Date, 
+  excludeEventId?: string,
+  locationId?: string
+) {
+  const targetLocation = locationId || "main-warehouse";
   const allItems = await db.item.findMany({
     where: { status: { not: "RETIRED" } },
     include: { category: true },
   });
 
-  const availableItems = await getAvailableItems(targetDate, undefined, excludeEventId);
+  const availableItems = await getAvailableItems(targetDate, undefined, excludeEventId, targetLocation);
   const availableIds = new Set(availableItems.map((i) => i.id));
 
   const categories = new Map<
@@ -88,14 +77,15 @@ export async function getAvailabilitySummary(targetDate: Date, excludeEventId?: 
 }
 
 /**
- * Check if specific items are available for a date (used before allocation).
+ * Check if specific items are available for a date at a location (used before allocation).
  */
 export async function checkItemsAvailable(
   itemIds: string[],
   targetDate: Date,
-  excludeEventId?: string
+  excludeEventId?: string,
+  locationId?: string
 ): Promise<{ available: boolean; conflictingItems: string[] }> {
-  const available = await getAvailableItems(targetDate, undefined, excludeEventId);
+  const available = await getAvailableItems(targetDate, undefined, excludeEventId, locationId);
   const availableIds = new Set(available.map((i) => i.id));
   const conflicting = itemIds.filter((id) => !availableIds.has(id));
   return { available: conflicting.length === 0, conflictingItems: conflicting };

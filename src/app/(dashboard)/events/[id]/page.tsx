@@ -141,7 +141,7 @@ export default async function EventDetailPage({
     notFound();
   }
 
-  // Fetch available items for allocation (uses event date)
+  // Fetch available items for allocation (default location: main-warehouse)
   const availableItems = await getAvailableItems(
     event.eventDate,
     undefined,
@@ -338,11 +338,9 @@ export default async function EventDetailPage({
                   name: c.name,
                   phone: c.phone,
                 }))}
-                locations={locations}
                 event={{
                   id: event.id,
                   customerId: event.customerId,
-                  locationId: event.locationId,
                   title: event.title,
                   eventType: event.eventType,
                   eventDate: event.eventDate,
@@ -367,6 +365,7 @@ export default async function EventDetailPage({
                 {canAllocate && (
                   <AllocateItemsDialog
                     eventId={event.id}
+                    eventDate={new Date(event.eventDate).toISOString()}
                     availableItems={availableItems.map((item: AvailableItemEntry) => ({
                       id: item.id,
                       name: item.name,
@@ -376,6 +375,7 @@ export default async function EventDetailPage({
                         ? { id: item.category.id, name: item.category.name }
                         : null,
                     }))}
+                    locations={locations}
                     alreadyAllocatedIds={event.eventItems.map(
                       (ei: EventItemEntry) => ei.itemId
                     )}
@@ -457,6 +457,7 @@ export default async function EventDetailPage({
               <CardContent>
                 <ReturnItems
                   eventId={event.id}
+                  locations={locations}
                   eventItems={event.eventItems.map((ei: EventItemEntry) => ({
                     id: ei.id,
                     itemId: ei.itemId,

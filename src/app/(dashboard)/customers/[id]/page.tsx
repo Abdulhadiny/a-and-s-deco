@@ -63,7 +63,9 @@ export default async function CustomerDetailPage({
   }
 
   // Calculate Financials
-  const totalBilled = quotes.reduce((acc, q) => acc + Number(q.total), 0);
+  const totalBilled = quotes
+    .filter((q) => q.status === "SENT" || q.status === "ACCEPTED")
+    .reduce((acc, q) => acc + Number(q.total), 0);
   const totalPaid = payments.reduce((acc, p) => acc + Number(p.amount), 0);
   const outstandingBalance = Math.max(0, totalBilled - totalPaid);
 

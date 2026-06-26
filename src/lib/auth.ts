@@ -61,16 +61,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.permissions = (user as any).permissions;
+        token.role = user.role;
+        token.permissions = user.permissions;
       }
       return token;
-      },
-      async session({ session, token }) {
+    },
+    async session({ session, token }) {
       if (token) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).permissions = token.permissions;
+        session.user.id = token.id || "";
+        session.user.role = token.role || "STAFF";
+        session.user.permissions = token.permissions || [];
       }
       return session;
     },
@@ -84,3 +84,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   secret: process.env.NEXTAUTH_SECRET,
 });
+
+/**
+ * Checks if the current session user has the required permission.
+ * Admins bypass all checks.
+ */
+export async function checkPermission(permission: string) {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const role = session.user.role;
+  const permissions = session.user.permissions || [];
+
+  if (role === "admin") {
+    return session;
+  }
+
+  if (!permissions.includes(permission)) {
+    throw new Error("Forbidden: Insufficient permissions");
+  }
+
+  return session;
+}
+

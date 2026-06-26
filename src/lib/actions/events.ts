@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { EventStatus, ReturnCondition, AuditAction } from "@/generated/prisma";
-import { auth } from "@/lib/auth";
+import { EventStatus, ReturnCondition, AuditAction, EventType } from "@/generated/prisma";
+import { checkPermission } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
 import { RentalEngine } from "@/lib/engines/rental-engine";
+import { getAvailableItems } from "@/lib/availability";
 
 export async function getEvents(filters?: {
   status?: EventStatus;
@@ -48,11 +49,9 @@ export async function getEvent(id: string) {
 }
 
 export async function createEvent(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("events:manage");
 
   const customerId = formData.get("customerId") as string;
-  const locationId = formData.get("locationId") as string; // Ensure location is linked
   const title = formData.get("title") as string;
   const eventType = formData.get("eventType") as string;
   const eventDate = formData.get("eventDate") as string;
@@ -68,9 +67,8 @@ export async function createEvent(formData: FormData) {
   const event = await db.event.create({
     data: {
       customerId,
-      locationId: locationId || null,
       title: title.trim(),
-      eventType: eventType as any,
+      eventType: eventType as EventType,
       eventDate: new Date(eventDate),
       setupDate: setupDate ? new Date(setupDate) : null,
       returnDate: returnDate ? new Date(returnDate) : null,
@@ -93,14 +91,12 @@ export async function createEvent(formData: FormData) {
 }
 
 export async function updateEvent(id: string, formData: FormData) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("events:manage");
 
   const oldValues = await db.event.findUnique({ where: { id } });
   if (!oldValues) throw new Error("Event not found");
 
   const customerId = formData.get("customerId") as string;
-  const locationId = formData.get("locationId") as string;
   const title = formData.get("title") as string;
   const eventType = formData.get("eventType") as string;
   const eventDate = formData.get("eventDate") as string;
@@ -114,9 +110,8 @@ export async function updateEvent(id: string, formData: FormData) {
     where: { id },
     data: {
       customerId,
-      locationId: locationId || oldValues.locationId,
       title: title.trim(),
-      eventType: eventType as any,
+      eventType: eventType as EventType,
       eventDate: new Date(eventDate),
       setupDate: setupDate ? new Date(setupDate) : null,
       returnDate: returnDate ? new Date(returnDate) : null,
@@ -140,15 +135,13 @@ export async function updateEvent(id: string, formData: FormData) {
   revalidatePath(`/events/${id}`);
 }
 
-export async function allocateItems(eventId: string, itemIds: string[]) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+export async function allocateItems(eventId: string, itemIds: string[], locationId?: string) {
+  const session = await checkPermission("events:manage");
 
   const event = await db.event.findUnique({ where: { id: eventId } });
   if (!event) throw new Error("Event not found");
 
-  // Default to Main Warehouse if no location is explicitly set
-  const targetLocationId = event.locationId || "main-warehouse";
+  const targetLocationId = locationId || "main-warehouse";
 
   // Use the new RentalEngine for atomic inventory deduction and assignment
   const itemsToAllocate = itemIds.map(id => ({ itemId: id, quantity: 1 }));
@@ -167,11 +160,10 @@ export async function allocateItems(eventId: string, itemIds: string[]) {
 export async function returnItem(
   eventItemId: string,
   condition: "GOOD" | "DAMAGED" | "MISSING",
-  damageNotes?: string,
-  damagePhotoUrl?: string
+  locationId?: string,
+  damageNotes?: string
 ) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("events:manage");
 
   const eventItem = await db.eventItem.findUnique({
     where: { id: eventItemId },
@@ -180,7 +172,7 @@ export async function returnItem(
 
   if (!eventItem) throw new Error("Allocation not found");
 
-  const targetLocationId = eventItem.event.locationId || "main-warehouse";
+  const targetLocationId = locationId || "main-warehouse";
 
   await RentalEngine.returnItems({
     eventId: eventItem.eventId,
@@ -213,8 +205,7 @@ export async function getEventsForMonth(year: number, month: number) {
 }
 
 export async function updateEventStatus(id: string, status: EventStatus) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("events:manage");
 
   const oldValues = await db.event.findUnique({ where: { id } });
   
@@ -239,8 +230,7 @@ export async function updateEventStatus(id: string, status: EventStatus) {
 }
 
 export async function deallocateItem(eventId: string, itemId: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("events:manage");
 
   const eventItem = await db.eventItem.findUnique({
     where: { eventId_itemId: { eventId, itemId } },
@@ -274,9 +264,8 @@ export async function deallocateItem(eventId: string, itemId: string) {
   revalidatePath("/inventory");
 }
 
-export async function returnAllItems(eventId: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+export async function returnAllItems(eventId: string, locationId?: string) {
+  const session = await checkPermission("events:manage");
 
   const unreturnedItems = await db.eventItem.findMany({
     where: { eventId, returnedAt: null },
@@ -285,7 +274,7 @@ export async function returnAllItems(eventId: string) {
 
   if (unreturnedItems.length === 0) return;
 
-  const targetLocationId = unreturnedItems[0].event.locationId || "main-warehouse";
+  const targetLocationId = locationId || "main-warehouse";
 
   await RentalEngine.returnItems({
     eventId,
@@ -300,4 +289,29 @@ export async function returnAllItems(eventId: string) {
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/inventory");
+}
+
+export async function getAvailableItemsAction(
+  eventDate: string,
+  eventId: string,
+  locationId?: string
+) {
+  await checkPermission("events:manage");
+
+  const items = await getAvailableItems(
+    new Date(eventDate),
+    undefined,
+    eventId,
+    locationId || undefined
+  );
+
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    tag: item.tag,
+    rentalPrice: Number(item.rentalPrice),
+    category: item.category
+      ? { id: item.category.id, name: item.category.name }
+      : null,
+  }));
 }

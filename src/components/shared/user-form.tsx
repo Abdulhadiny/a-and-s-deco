@@ -27,7 +27,14 @@ import { useFormConfirmation } from "@/lib/hooks/use-form-confirmation";
 type UserFormValues = z.infer<typeof userSchema>;
 
 interface UserFormProps {
-  initialData?: any;
+  initialData?: {
+    id: string;
+    email: string;
+    name: string;
+    roleId: string | null;
+    locationId: string | null;
+    isActive: boolean;
+  };
   roles: { id: string; displayName: string }[];
   locations: { id: string; name: string }[];
 }
@@ -48,8 +55,9 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
       ? {
           email: initialData.email,
           name: initialData.name,
-          roleId: initialData.roleId,
-          locationId: initialData.locationId || "",
+          password: "",
+          roleId: initialData.roleId || "",
+          locationId: initialData.locationId,
           isActive: initialData.isActive,
         }
       : {
@@ -57,7 +65,7 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
           name: "",
           password: "",
           roleId: "",
-          locationId: "",
+          locationId: null,
           isActive: true,
         },
   });
@@ -76,8 +84,9 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
       }
       router.push("/settings/users");
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error) {
+      const err = error as Error;
+      toast.error(err.message || "An error occurred");
     } finally {
       setIsLoading(false);
       resetConfirmation();
@@ -152,7 +161,7 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
               control={control}
               name="locationId"
               render={({ field }) => (
-                <Select value={field.value || ""} onValueChange={(v) => field.onChange(v || null)}>
+                 <Select value={field.value || "null"} onValueChange={(v) => field.onChange(v === "null" || !v ? null : v)}>
                   <SelectTrigger className="bg-muted border-border text-foreground">
                     <SelectValue placeholder="Global (All locations)" />
                   </SelectTrigger>

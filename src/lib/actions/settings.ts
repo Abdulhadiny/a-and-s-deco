@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
 import { AuditAction } from "@/generated/prisma";
 import { locationSchema } from "@/lib/validators";
@@ -10,9 +10,8 @@ import { revalidatePath } from "next/cache";
 /**
  * Creates a new location.
  */
-export async function createLocation(data: any) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+export async function createLocation(data: unknown) {
+  const session = await checkPermission("settings:manage");
 
   const validated = locationSchema.parse(data);
 
@@ -36,9 +35,8 @@ export async function createLocation(data: any) {
 /**
  * Updates an existing location.
  */
-export async function updateLocation(id: string, data: any) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+export async function updateLocation(id: string, data: unknown) {
+  const session = await checkPermission("settings:manage");
 
   const validated = locationSchema.parse(data);
 
@@ -67,8 +65,7 @@ export async function updateLocation(id: string, data: any) {
  * Deactivates a location.
  */
 export async function deleteLocation(id: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("settings:manage");
 
   const oldValues = await db.location.findUnique({ where: { id } });
 
@@ -90,3 +87,4 @@ export async function deleteLocation(id: string) {
   revalidatePath("/settings/locations");
   return location;
 }
+

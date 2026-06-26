@@ -34,7 +34,6 @@ interface Customer {
 interface EventData {
   id: string;
   customerId: string;
-  locationId?: string | null;
   title: string;
   eventType: string;
   eventDate: string | Date;
@@ -46,7 +45,6 @@ interface EventData {
 
 interface EventFormProps {
   customers: Customer[];
-  locations?: { id: string; name: string }[];
   event?: EventData;
   mode?: "create" | "edit";
 }
@@ -72,7 +70,6 @@ function toDateInputValue(date: string | Date | null | undefined): string {
 
 export function EventForm({
   customers: initialCustomers,
-  locations = [],
   event,
   mode = "create",
 }: EventFormProps) {
@@ -84,7 +81,12 @@ export function EventForm({
   const [customers, setCustomers] = useState(initialCustomers);
   const [customerId, setCustomerId] = useState(event?.customerId ?? "");
   const [eventType, setEventType] = useState(event?.eventType ?? "");
-  const [locationId, setLocationId] = useState(event?.locationId ?? "");
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [eventDate, setEventDate] = useState(toDateInputValue(event?.eventDate));
+  const [setupDate, setSetupDate] = useState(toDateInputValue(event?.setupDate));
+  const [returnDate, setReturnDate] = useState(toDateInputValue(event?.returnDate));
+  const [venue, setVenue] = useState(event?.venue ?? "");
+  const [notes, setNotes] = useState(event?.notes ?? "");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -94,9 +96,6 @@ export function EventForm({
     const formData = new FormData(e.currentTarget);
     formData.set("customerId", customerId);
     formData.set("eventType", eventType);
-    if (locationId) {
-      formData.set("locationId", locationId);
-    }
 
     if (!customerId) {
       setError("Please select a customer.");
@@ -132,78 +131,69 @@ export function EventForm({
         {/* Customer */}
         <div className="flex flex-col gap-1.5">
           <Label>Customer</Label>
-          <div className="flex gap-2">
-            <select
-              className={selectClass}
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              required
-              disabled={isPending}
-              aria-label="Customer"
-            >
-              <option value="" disabled>
-                Select customer
-              </option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}{c.phone ? ` (${c.phone})` : ""}
+          {mode === "edit" ? (
+            <p className="flex h-8 items-center rounded-lg border border-input bg-muted/40 px-2.5 text-sm text-muted-foreground">
+              {customers.find((c) => c.id === customerId)?.name ?? "—"}
+            </p>
+          ) : (
+            <div className="flex gap-2">
+              <select
+                className={selectClass}
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                required
+                disabled={isPending}
+                aria-label="Customer"
+              >
+                <option value="" disabled>
+                  Select customer
                 </option>
-              ))}
-            </select>
-            <NewCustomerDialog
-              onCreated={(c) => {
-                setCustomers(
-                  [...customers, c].sort((a, b) =>
-                    a.name.localeCompare(b.name)
-                  )
-                );
-                setCustomerId(c.id);
-              }}
-            />
-          </div>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.phone ? ` (${c.phone})` : ""}
+                  </option>
+                ))}
+              </select>
+              <NewCustomerDialog
+                onCreated={(c) => {
+                  setCustomers(
+                    [...customers, c].sort((a, b) =>
+                      a.name.localeCompare(b.name)
+                    )
+                  );
+                  setCustomerId(c.id);
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Event Type */}
         <div className="flex flex-col gap-1.5">
           <Label>Event Type</Label>
-          <select
-            className={selectClass}
-            value={eventType}
-            onChange={(e) => setEventType(e.target.value)}
-            required
-            disabled={isPending}
-            aria-label="Event type"
-          >
-            <option value="" disabled>
-              Select type
-            </option>
-            {EVENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+          {mode === "edit" ? (
+            <p className="flex h-8 items-center rounded-lg border border-input bg-muted/40 px-2.5 text-sm text-muted-foreground">
+              {EVENT_TYPES.find((t) => t.value === eventType)?.label ?? eventType}
+            </p>
+          ) : (
+            <select
+              className={selectClass}
+              value={eventType}
+              onChange={(e) => setEventType(e.target.value)}
+              required
+              disabled={isPending}
+              aria-label="Event type"
+            >
+              <option value="" disabled>
+                Select type
               </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Location / Warehouse */}
-        <div className="flex flex-col gap-1.5">
-          <Label>Origin Warehouse / Location</Label>
-          <select
-            className={selectClass}
-            value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            disabled={isPending}
-            aria-label="Location"
-          >
-            <option value="">
-              Main Warehouse (Default)
-            </option>
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
+              {EVENT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Title */}
@@ -214,7 +204,8 @@ export function EventForm({
             name="title"
             required
             disabled={isPending}
-            defaultValue={event?.title ?? ""}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Amina & Ibrahim Wedding"
           />
         </div>
@@ -228,7 +219,8 @@ export function EventForm({
             type="date"
             required
             disabled={isPending}
-            defaultValue={toDateInputValue(event?.eventDate)}
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
           />
         </div>
 
@@ -240,7 +232,8 @@ export function EventForm({
             name="setupDate"
             type="date"
             disabled={isPending}
-            defaultValue={toDateInputValue(event?.setupDate)}
+            value={setupDate}
+            onChange={(e) => setSetupDate(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
             When items need to be delivered/setup
@@ -255,7 +248,8 @@ export function EventForm({
             name="returnDate"
             type="date"
             disabled={isPending}
-            defaultValue={toDateInputValue(event?.returnDate)}
+            value={returnDate}
+            onChange={(e) => setReturnDate(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
             When items should be returned/collected
@@ -269,7 +263,8 @@ export function EventForm({
             id="event-venue"
             name="venue"
             disabled={isPending}
-            defaultValue={event?.venue ?? ""}
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
             placeholder="e.g. Grand Ballroom, Tahir Guest Palace"
           />
         </div>
@@ -282,7 +277,8 @@ export function EventForm({
           id="event-notes"
           name="notes"
           disabled={isPending}
-          defaultValue={event?.notes ?? ""}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
           placeholder="Special requests, color scheme, theme details..."
           rows={3}
         />

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { checkPermission } from "@/lib/auth";
 
 export async function getCustomers(search?: string) {
   return db.customer.findMany({
@@ -31,6 +32,8 @@ export async function getCustomer(id: string) {
 }
 
 export async function createCustomer(formData: FormData) {
+  await checkPermission("customers:manage");
+  
   const name = formData.get("name") as string;
   const phone = formData.get("phone") as string | null;
   const email = formData.get("email") as string | null;
@@ -53,6 +56,8 @@ export async function createCustomer(formData: FormData) {
 }
 
 export async function updateCustomer(id: string, formData: FormData) {
+  await checkPermission("customers:manage");
+
   const name = formData.get("name") as string;
   const phone = formData.get("phone") as string | null;
   const email = formData.get("email") as string | null;
@@ -72,3 +77,4 @@ export async function updateCustomer(id: string, formData: FormData) {
   revalidatePath("/customers");
   revalidatePath(`/customers/${id}`);
 }
+

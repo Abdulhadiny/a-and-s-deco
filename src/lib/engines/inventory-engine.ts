@@ -83,6 +83,7 @@ export const InventoryEngine = {
         recordTable: "inventory_stock",
         newValues: stock,
         ipAddress: "system",
+        tx,
       });
 
       return stock;
@@ -151,6 +152,7 @@ export const InventoryEngine = {
         recordTable: "inventory_stock",
         newValues: updatedStock,
         ipAddress: "system",
+        tx,
       });
 
       return updatedStock;

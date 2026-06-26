@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { PaymentStatus, AuditAction } from "@/generated/prisma";
 import { logAction } from "../audit";
+import { TxClient } from "./inventory-engine";
 
 /**
  * The Finance Engine handles payments, quotes, and expense reconciliation.
@@ -50,6 +51,7 @@ export const FinanceEngine = {
         recordTable: "customer_payments",
         newValues: payment,
         ipAddress: "system",
+        tx,
       });
 
       // 2. If linked to a quote, update its paid amount and status
@@ -80,6 +82,7 @@ export const FinanceEngine = {
             recordTable: "quotes",
             newValues: updatedQuote,
             ipAddress: "system",
+            tx,
           });
         }
       }
@@ -106,7 +109,7 @@ export const FinanceEngine = {
     description?: string;
     locationId?: string;
     createdBy: string;
-    tx?: any;
+    tx?: TxClient;
   }) {
     const client = externalTx || db;
     const expense = await client.expense.create({
@@ -128,6 +131,7 @@ export const FinanceEngine = {
       recordTable: "expenses",
       newValues: expense,
       ipAddress: "system",
+      tx: externalTx,
     });
 
     return expense;

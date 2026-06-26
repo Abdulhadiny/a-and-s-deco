@@ -15,7 +15,14 @@ export default async function QuotesPage() {
         description="View and manage generated quotes for all events"
       />
 
-      <QuotesTable quotes={quotes} />
+      <QuotesTable quotes={quotes.map((q) => ({
+        ...q,
+        subtotal: Number(q.subtotal),
+        discount: Number(q.discount),
+        tax: Number(q.tax),
+        total: Number(q.total),
+        amountPaid: Number(q.amountPaid),
+      }))} />
     </div>
   );
 }

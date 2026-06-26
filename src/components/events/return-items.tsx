@@ -6,6 +6,7 @@ import { returnItem, returnAllItems } from "@/lib/actions/events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Loader2Icon,
   CheckCircleIcon,
@@ -31,11 +32,16 @@ interface EventItemEntry {
 interface ReturnItemsProps {
   eventId: string;
   eventItems: EventItemEntry[];
+  locations: { id: string; name: string }[];
 }
+
+const selectClass =
+  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 type ReturnCondition = "GOOD" | "DAMAGED" | "MISSING";
 
-export function ReturnItems({ eventId, eventItems }: ReturnItemsProps) {
+export function ReturnItems({ eventId, eventItems, locations }: ReturnItemsProps) {
+  const [locationId, setLocationId] = useState("main-warehouse");
   const unreturned = eventItems.filter((ei) => !ei.returnedAt);
   const returned = eventItems.filter((ei) => ei.returnedAt);
 
@@ -49,6 +55,25 @@ export function ReturnItems({ eventId, eventItems }: ReturnItemsProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Location picker for returns */}
+      {unreturned.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs">Return to Warehouse</Label>
+          <select
+            className={selectClass}
+            value={locationId}
+            onChange={(e) => setLocationId(e.target.value)}
+            aria-label="Return location"
+          >
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Unreturned items */}
       {unreturned.length > 0 && (
         <div className="flex flex-col gap-3">
@@ -56,11 +81,11 @@ export function ReturnItems({ eventId, eventItems }: ReturnItemsProps) {
             <p className="text-sm font-medium">
               Pending Return ({unreturned.length})
             </p>
-            <ReturnAllButton eventId={eventId} count={unreturned.length} />
+            <ReturnAllButton eventId={eventId} locationId={locationId} count={unreturned.length} />
           </div>
           <div className="flex flex-col gap-2">
             {unreturned.map((ei) => (
-              <ReturnItemRow key={ei.id} eventItem={ei} />
+              <ReturnItemRow key={ei.id} eventItem={ei} locationId={locationId} />
             ))}
           </div>
         </div>
@@ -108,7 +133,7 @@ export function ReturnItems({ eventId, eventItems }: ReturnItemsProps) {
 
 // --- Individual return row ---
 
-function ReturnItemRow({ eventItem }: { eventItem: EventItemEntry }) {
+function ReturnItemRow({ eventItem, locationId }: { eventItem: EventItemEntry; locationId: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showDamageInput, setShowDamageInput] = useState(false);
@@ -127,6 +152,7 @@ function ReturnItemRow({ eventItem }: { eventItem: EventItemEntry }) {
         await returnItem(
           eventItem.id,
           condition,
+          locationId,
           condition === "DAMAGED" ? damageNotes : undefined
         );
         router.refresh();
@@ -220,9 +246,11 @@ function ReturnItemRow({ eventItem }: { eventItem: EventItemEntry }) {
 
 function ReturnAllButton({
   eventId,
+  locationId,
   count,
 }: {
   eventId: string;
+  locationId: string;
   count: number;
 }) {
   const router = useRouter();
@@ -230,7 +258,7 @@ function ReturnAllButton({
 
   function handleReturnAll() {
     startTransition(async () => {
-      await returnAllItems(eventId);
+      await returnAllItems(eventId, locationId);
       router.refresh();
     });
   }

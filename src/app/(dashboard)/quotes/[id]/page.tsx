@@ -14,12 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { QuoteLineEditor } from "./quote-line-editor";
 import { QuoteActions } from "./quote-actions";
+import { PaymentForm } from "@/components/finance/payment-form";
 import {
   ArrowLeftIcon,
   CalendarDaysIcon,
   UserIcon,
   FileTextIcon,
   DownloadIcon,
+  ReceiptIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -200,9 +202,59 @@ export default async function QuoteDetailPage({
                     {formatNGN.format(Number(quote.total))}
                   </dd>
                 </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Amount Paid</dt>
+                  <dd className="font-medium text-emerald-600 dark:text-emerald-400">
+                    {formatNGN.format(Number(quote.amountPaid ?? 0))}
+                  </dd>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <dt className="font-medium">Balance Due</dt>
+                  <dd className={`font-bold ${Number(quote.total) - Number(quote.amountPaid ?? 0) > 0 ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}>
+                    {formatNGN.format(Math.max(0, Number(quote.total) - Number(quote.amountPaid ?? 0)))}
+                  </dd>
+                </div>
+                {quote.paymentStatus && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Payment</dt>
+                      <dd>
+                        {quote.paymentStatus === "reconciled" ? (
+                          <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">Reconciled</Badge>
+                        ) : (
+                          <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">Partial</Badge>
+                        )}
+                      </dd>
+                    </div>
+                  </>
+                )}
               </dl>
             </CardContent>
           </Card>
+
+          {quote.status !== "DECLINED" && quote.event.customer && Number(quote.total) - Number(quote.amountPaid ?? 0) > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ReceiptIcon className="size-4" />
+                  Record Payment
+                </CardTitle>
+                <CardDescription>
+                  Log a payment received from {quote.event.customer.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PaymentForm
+                  customerId={quote.event.customer.id}
+                  quoteId={quote.id}
+                  defaultAmount={Math.max(0, Number(quote.total) - Number(quote.amountPaid ?? 0))}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right column: Line items editor */}
@@ -211,7 +263,9 @@ export default async function QuoteDetailPage({
             <CardHeader>
               <CardTitle>Line Items</CardTitle>
               <CardDescription>
-                Edit quantities, prices, and add freeform lines
+                {quote.status === "DRAFT"
+                  ? "Edit quantities, prices, and add freeform lines"
+                  : "Quote is locked — revert to draft to make changes"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -220,6 +274,7 @@ export default async function QuoteDetailPage({
                 initialLines={lines}
                 initialDiscount={Number(quote.discount ?? 0)}
                 initialNotes={quote.notes ?? ""}
+                locked={quote.status !== "DRAFT"}
               />
             </CardContent>
           </Card>

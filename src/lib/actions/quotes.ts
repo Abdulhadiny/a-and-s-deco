@@ -56,7 +56,6 @@ export async function createQuoteFromEvent(eventId: string) {
   });
 
   revalidatePath(`/events/${eventId}`);
-  return quote;
 }
 
 export async function updateQuoteLines(

@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
-import { AuditAction } from "@/generated/prisma";
+import { AuditAction, Prisma } from "@/generated/prisma";
 import { userSchema } from "@/lib/validators";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
@@ -11,9 +11,8 @@ import bcrypt from "bcryptjs";
 /**
  * Creates a new user.
  */
-export async function createUser(data: any) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+export async function createUser(data: unknown) {
+  const session = await checkPermission("users:manage");
 
   const validated = userSchema.parse(data);
 
@@ -35,7 +34,8 @@ export async function createUser(data: any) {
     include: { role: true },
   });
 
-  const { passwordHash: _, ...userWithoutPassword } = user;
+  const userWithoutPassword = { ...user } as Record<string, unknown>;
+  delete userWithoutPassword.passwordHash;
 
   await logAction({
     userId: session.user.id!,
@@ -53,16 +53,15 @@ export async function createUser(data: any) {
 /**
  * Updates an existing user.
  */
-export async function updateUser(id: string, data: any) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+export async function updateUser(id: string, data: unknown) {
+  const session = await checkPermission("users:manage");
 
   const validated = userSchema.parse(data);
 
   const oldUser = await db.user.findUnique({ where: { id } });
   if (!oldUser) throw new Error("User not found");
 
-  const updateData: any = {
+  const updateData: Prisma.UserUncheckedUpdateInput = {
     email: validated.email,
     name: validated.name,
     roleId: validated.roleId,
@@ -80,8 +79,11 @@ export async function updateUser(id: string, data: any) {
     include: { role: true },
   });
 
-  const { passwordHash: _, ...userWithoutPassword } = user;
-  const { passwordHash: __, ...oldUserWithoutPassword } = oldUser;
+  const userWithoutPassword = { ...user } as Record<string, unknown>;
+  delete userWithoutPassword.passwordHash;
+
+  const oldUserWithoutPassword = { ...oldUser } as Record<string, unknown>;
+  delete oldUserWithoutPassword.passwordHash;
 
   await logAction({
     userId: session.user.id!,
@@ -96,3 +98,4 @@ export async function updateUser(id: string, data: any) {
   revalidatePath("/settings/users");
   return userWithoutPassword;
 }
+

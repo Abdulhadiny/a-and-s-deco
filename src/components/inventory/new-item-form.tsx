@@ -85,7 +85,7 @@ function SingleItemForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState("");
-  const [locationId, setLocationId] = useState("");
+  const [locationId, setLocationId] = useState("main-warehouse");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -93,7 +93,7 @@ function SingleItemForm({
 
     const formData = new FormData(e.currentTarget);
     formData.set("categoryId", categoryId);
-    if (locationId) formData.set("locationId", locationId);
+    formData.set("locationId", locationId);
 
     startTransition(async () => {
       try {
@@ -151,9 +151,6 @@ function SingleItemForm({
             disabled={isPending}
             aria-label="Location"
           >
-            <option value="">
-              Main Warehouse (Default)
-            </option>
             {locations.map((loc) => (
               <option key={loc.id} value={loc.id}>
                 {loc.name}
@@ -187,19 +184,8 @@ function SingleItemForm({
           />
         </div>
 
-        {/* Initial Quantity */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="single-qty">Initial Quantity</Label>
-          <Input
-            id="single-qty"
-            name="initialQuantity"
-            type="number"
-            min="0"
-            step="1"
-            disabled={isPending}
-            placeholder="0"
-          />
-        </div>
+        {/* Initial quantity is always 1 for single items (each has a unique tag) */}
+        <input type="hidden" name="initialQuantity" value="1" />
 
         {/* Rental Price */}
         <div className="flex flex-col gap-1.5">
@@ -264,13 +250,12 @@ function BulkAddForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState("");
-  const [locationId, setLocationId] = useState("");
+  const [locationId, setLocationId] = useState("main-warehouse");
   const [baseName, setBaseName] = useState("");
   const [tagPrefix, setTagPrefix] = useState("");
   const [startNumber, setStartNumber] = useState(1);
   const [count, setCount] = useState(1);
   const [rentalPrice, setRentalPrice] = useState("");
-  const [initialQuantity, setInitialQuantity] = useState("1");
 
   // Preview the tags that will be generated
   const previewTags = Array.from({ length: Math.min(count, 10) }, (_, i) => {
@@ -302,8 +287,8 @@ function BulkAddForm({
         name: `${baseName.trim()} ${num}`,
         tag: `${tagPrefix.trim().toUpperCase()}-${String(num).padStart(3, "0")}`,
         rentalPrice: parseFloat(rentalPrice),
-        initialQuantity: parseInt(initialQuantity || "0", 10),
-        locationId: locationId || undefined,
+        initialQuantity: 1,
+        locationId,
       };
     });
 
@@ -363,9 +348,6 @@ function BulkAddForm({
             disabled={isPending}
             aria-label="Location"
           >
-            <option value="">
-              Main Warehouse (Default)
-            </option>
             {locations.map((loc) => (
               <option key={loc.id} value={loc.id}>
                 {loc.name}
@@ -417,6 +399,9 @@ function BulkAddForm({
             required
             disabled={isPending}
           />
+          <p className="text-xs text-muted-foreground">
+            Continue from a previous batch (e.g. set to 51 if you already have 1–50)
+          </p>
         </div>
 
         {/* Count */}
@@ -448,22 +433,11 @@ function BulkAddForm({
             disabled={isPending}
             placeholder="0.00"
           />
+          <p className="text-xs text-muted-foreground">
+            Same price applied to every item in this batch
+          </p>
         </div>
 
-        {/* Initial Quantity (Per Item) */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="bulk-qty">Initial Qty (per item)</Label>
-          <Input
-            id="bulk-qty"
-            type="number"
-            min="0"
-            step="1"
-            value={initialQuantity}
-            onChange={(e) => setInitialQuantity(e.target.value)}
-            disabled={isPending}
-            placeholder="1"
-          />
-        </div>
       </div>
 
       {/* Tag preview */}

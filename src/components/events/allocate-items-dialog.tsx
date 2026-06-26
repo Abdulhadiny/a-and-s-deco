@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { allocateItems } from "@/lib/actions/events";
+import { allocateItems, getAvailableItemsAction } from "@/lib/actions/events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,9 @@ interface AvailableItem {
 
 interface AllocateItemsDialogProps {
   eventId: string;
+  eventDate: string;
   availableItems: AvailableItem[];
+  locations: { id: string; name: string }[];
   /** IDs already allocated to this event, to skip in the list */
   alreadyAllocatedIds?: string[];
 }
@@ -49,17 +51,36 @@ const formatNGN = new Intl.NumberFormat("en-NG", {
 
 export function AllocateItemsDialog({
   eventId,
-  availableItems,
+  eventDate,
+  availableItems: initialItems,
+  locations,
   alreadyAllocatedIds = [],
 }: AllocateItemsDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [availableItems, setAvailableItems] = useState(initialItems);
+  const [locationId, setLocationId] = useState("main-warehouse");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("__all__");
+
+  async function handleLocationChange(newLocationId: string) {
+    setLocationId(newLocationId);
+    setSelectedIds(new Set());
+    setIsLoadingItems(true);
+    try {
+      const items = await getAvailableItemsAction(eventDate, eventId, newLocationId);
+      setAvailableItems(items);
+    } catch {
+      setError("Failed to load items for this location.");
+    } finally {
+      setIsLoadingItems(false);
+    }
+  }
 
   // Exclude items already allocated to this event
   const allocatedSet = useMemo(
@@ -126,7 +147,7 @@ export function AllocateItemsDialog({
 
     startTransition(async () => {
       try {
-        await allocateItems(eventId, Array.from(selectedIds));
+        await allocateItems(eventId, Array.from(selectedIds), locationId);
         setSelectedIds(new Set());
         setSearch("");
         setCategoryFilter("__all__");
@@ -146,6 +167,8 @@ export function AllocateItemsDialog({
       setSelectedIds(new Set());
       setSearch("");
       setCategoryFilter("__all__");
+      setLocationId("main-warehouse");
+      setAvailableItems(initialItems);
       setError(null);
     }
   }
@@ -169,6 +192,22 @@ export function AllocateItemsDialog({
 
         {/* Filters */}
         <div className="flex flex-col gap-3 border-b px-4 pb-4">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">Warehouse / Location</Label>
+            <select
+              className={selectClass}
+              value={locationId}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              disabled={isPending || isLoadingItems}
+              aria-label="Warehouse location"
+            >
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="relative">
             <SearchIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -220,7 +259,14 @@ export function AllocateItemsDialog({
 
         {/* Item list */}
         <div className="flex-1 overflow-y-auto px-4">
-          {filteredItems.length === 0 ? (
+          {isLoadingItems ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Loading items...
+              </p>
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
               <p className="text-sm text-muted-foreground">
                 No available items match your filters.

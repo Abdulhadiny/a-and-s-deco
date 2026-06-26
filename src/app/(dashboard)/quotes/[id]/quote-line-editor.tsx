@@ -26,6 +26,7 @@ import {
   PlusIcon,
   TrashIcon,
   SaveIcon,
+  LockIcon,
 } from "lucide-react";
 
 const formatNGN = new Intl.NumberFormat("en-NG", {
@@ -46,6 +47,7 @@ interface QuoteLineEditorProps {
   initialLines: Line[];
   initialDiscount: number;
   initialNotes: string;
+  locked?: boolean;
 }
 
 export function QuoteLineEditor({
@@ -53,6 +55,7 @@ export function QuoteLineEditor({
   initialLines,
   initialDiscount,
   initialNotes,
+  locked = false,
 }: QuoteLineEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -134,6 +137,87 @@ export function QuoteLineEditor({
         );
       }
     });
+  }
+
+  if (locked) {
+    return (
+      <div className="flex flex-col gap-5">
+        {/* Locked notice */}
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+          <LockIcon className="size-3.5 shrink-0" />
+          <span>
+            This quote is locked. Use <strong>Revert to Draft</strong> above to make changes.
+          </span>
+        </div>
+
+        {/* Read-only line items */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[200px]">Description</TableHead>
+                <TableHead className="w-20">Qty</TableHead>
+                <TableHead className="w-28">Unit Price</TableHead>
+                <TableHead className="w-28 text-right">Line Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {lines.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                    No line items.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                lines.map((line, index) => (
+                  <TableRow key={line.id ?? `new-${index}`}>
+                    <TableCell className="font-medium">{line.description}</TableCell>
+                    <TableCell>{line.quantity}</TableCell>
+                    <TableCell>{formatNGN.format(line.unitPrice)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatNGN.format(line.lineTotal)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={3} className="text-right font-medium">
+                  Subtotal
+                </TableCell>
+                <TableCell className="text-right font-medium">
+                  {formatNGN.format(subtotal)}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+
+        <Separator />
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          {discount > 0 && (
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Discount</p>
+              <p className="text-sm font-medium text-destructive">-{formatNGN.format(discount)}</p>
+            </div>
+          )}
+          <div className="text-right sm:ml-auto">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-2xl font-bold">{formatNGN.format(total)}</p>
+          </div>
+        </div>
+
+        {notes && (
+          <>
+            <Separator />
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Notes</p>
+              <p className="text-sm text-foreground">{notes}</p>
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
 
   return (

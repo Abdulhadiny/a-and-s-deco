@@ -74,7 +74,7 @@ export function QuoteActions({ quoteId, currentStatus }: QuoteActionsProps) {
           </Button>
         </>
       )}
-      {(currentStatus === "ACCEPTED" || currentStatus === "DECLINED") && (
+      {currentStatus === "SENT" && (
         <Button
           variant="outline"
           size="sm"

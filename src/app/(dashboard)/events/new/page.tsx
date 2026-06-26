@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getCustomers } from "@/lib/actions/customers";
-import { db } from "@/lib/db";
 import {
   Card,
   CardContent,
@@ -15,10 +14,7 @@ import { EventForm } from "@/components/events/event-form";
 type CustomerEntry = Awaited<ReturnType<typeof getCustomers>>[number];
 
 export default async function NewEventPage() {
-  const [customers, locations] = await Promise.all([
-    getCustomers(),
-    db.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-  ]);
+  const customers = await getCustomers();
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,7 +53,6 @@ export default async function NewEventPage() {
               name: c.name,
               phone: c.phone,
             }))}
-            locations={locations}
           />
         </CardContent>
       </Card>

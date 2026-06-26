@@ -1,8 +1,11 @@
 /**
  * Formats a number as Nigerian Naira (NGN)
+ * Supports numbers, strings, bigints, and objects (like Prisma Decimal)
  */
-export function formatCurrency(amount: number | string | bigint | any): string {
-  const value = typeof amount === "string" ? parseFloat(amount) : Number(amount);
+export function formatCurrency(amount: number | string | bigint | object | null | undefined): string {
+  if (amount === null || amount === undefined) return "₦0.00";
+  const strValue = typeof amount === "object" ? amount.toString() : String(amount);
+  const value = parseFloat(strValue);
   
   if (isNaN(value)) return "₦0.00";
 
@@ -17,8 +20,10 @@ export function formatCurrency(amount: number | string | bigint | any): string {
  * Formats currency in compact form (K/M/B suffixes) for space-constrained UI like StatCards.
  * Values under ₦10,000 are shown in full without decimals.
  */
-export function formatCompactCurrency(amount: number | string | bigint | any): string {
-  const value = typeof amount === "string" ? parseFloat(amount) : Number(amount);
+export function formatCompactCurrency(amount: number | string | bigint | object | null | undefined): string {
+  if (amount === null || amount === undefined) return "₦0";
+  const strValue = typeof amount === "object" ? amount.toString() : String(amount);
+  const value = parseFloat(strValue);
   if (isNaN(value)) return "₦0";
 
   const abs = Math.abs(value);
@@ -48,8 +53,10 @@ export function formatCompactCurrency(amount: number | string | bigint | any): s
 /**
  * Formats currency without the symbol
  */
-export function formatAmount(amount: number | string | any): string {
-  const value = typeof amount === "string" ? parseFloat(amount) : Number(amount);
+export function formatAmount(amount: number | string | object | null | undefined): string {
+  if (amount === null || amount === undefined) return "0.00";
+  const strValue = typeof amount === "object" ? amount.toString() : String(amount);
+  const value = parseFloat(strValue);
   if (isNaN(value)) return "0.00";
 
   return new Intl.NumberFormat("en-NG", {

@@ -18,7 +18,7 @@ const trimmedString = (min: number, max: number, label: string) =>
     .max(max, `${label} must be at most ${max} characters`);
 
 /** Optional trimmed string — normalizes empty to undefined */
-const optionalTrimmedString = (max: number, label: string) =>
+export const optionalTrimmedString = (max: number, label: string) =>
   z.preprocess(
     normalize,
     z
@@ -28,7 +28,7 @@ const optionalTrimmedString = (max: number, label: string) =>
   );
 
 /** Optional phone — strips spaces/hyphens, validates 11-digit local or +234 international */
-const optionalPhone = () =>
+export const optionalPhone = () =>
   z.preprocess(
     (val) => {
       if (typeof val === "string") {
@@ -47,7 +47,7 @@ const optionalPhone = () =>
   );
 
 /** Optional CUID that accepts null, undefined, or "" and normalizes to null */
-const optionalCuid = (msg = "Invalid selection") =>
+export const optionalCuid = (msg = "Invalid selection") =>
   z.preprocess(
     (val) => (val === "" || val === undefined ? null : val),
     z.string().cuid(msg).nullable()
@@ -68,8 +68,8 @@ export const userSchema = z.object({
     .min(6, "Password must be at least 6 characters")
     .max(128, "Password is too long")
     .optional(),
-  roleId: z.string().cuid("Select a role"),
-  locationId: z.string().cuid("Invalid location").nullable().optional(),
+  roleId: z.string().min(1, "Select a role"),
+  locationId: z.string().nullable().optional(),
   isActive: z.boolean(),
 });
 
@@ -101,4 +101,9 @@ export const locationSchema = z.object({
 export const systemConfigSchema = z.object({
   value: z.any(),
   description: z.string().optional(),
+});
+
+export const expenseCategorySchema = z.object({
+  name: trimmedString(2, 100, "Expense category name"),
+  isActive: z.boolean(),
 });

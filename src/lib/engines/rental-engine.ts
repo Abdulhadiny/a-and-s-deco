@@ -1,7 +1,6 @@
 import { db } from "../db";
-import { InventoryEngine, TxClient } from "./inventory-engine";
-import { ReturnCondition, EventStatus, AuditAction } from "@/generated/prisma";
-import { logAction } from "../audit";
+import { InventoryEngine } from "./inventory-engine";
+import { ReturnCondition } from "@/generated/prisma";
 
 interface AllocationItem {
   itemId: string;
@@ -63,25 +62,6 @@ export const RentalEngine = {
         }
       }
 
-      // 3. Update event status if it was UPCOMING
-      const event = await tx.event.findUnique({ where: { id: eventId } });
-      if (event?.status === EventStatus.UPCOMING) {
-        const updatedEvent = await tx.event.update({
-          where: { id: eventId },
-          data: { status: EventStatus.IN_PROGRESS }
-        });
-
-        await logAction({
-          userId: createdBy,
-          action: AuditAction.update,
-          module: "events",
-          recordId: eventId,
-          recordTable: "events",
-          newValues: updatedEvent,
-          ipAddress: "system",
-        });
-      }
-
       return { success: true };
     });
   },
@@ -134,28 +114,6 @@ export const RentalEngine = {
             returnCondition: ret.condition,
             damageNotes: ret.notes,
           }
-        });
-      }
-
-      // Check if all items for this event are returned to potentially auto-close the event
-      const remainingItems = await tx.eventItem.count({
-        where: { eventId, returnedAt: null }
-      });
-
-      if (remainingItems === 0) {
-        const closedEvent = await tx.event.update({
-          where: { id: eventId },
-          data: { status: EventStatus.COMPLETED }
-        });
-
-        await logAction({
-          userId: createdBy,
-          action: AuditAction.update,
-          module: "events",
-          recordId: eventId,
-          recordTable: "events",
-          newValues: closedEvent,
-          ipAddress: "system",
         });
       }
 

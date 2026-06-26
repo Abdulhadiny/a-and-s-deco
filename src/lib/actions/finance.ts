@@ -1,9 +1,12 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { checkPermission } from "@/lib/auth";
 import { FinanceEngine } from "@/lib/engines/finance-engine";
 import { revalidatePath } from "next/cache";
+import { db } from "@/lib/db";
+import { logAction } from "@/lib/audit";
+import { AuditAction } from "@/generated/prisma";
+import { expenseCategorySchema } from "@/lib/validators";
 
 /**
  * Records a payment against a customer account and optionally a specific quote.
@@ -17,8 +20,7 @@ export async function recordPayment(data: {
   reference?: string | null;
   notes?: string | null;
 }) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("finance:manage");
 
   const payment = await FinanceEngine.recordPayment({
     customerId: data.customerId,
@@ -36,8 +38,6 @@ export async function recordPayment(data: {
     revalidatePath(`/quotes/${data.quoteId}`);
   }
   revalidatePath("/finance");
-
-  return payment;
 }
 
 /**
@@ -50,8 +50,7 @@ export async function recordExpense(data: {
   expenseDate: string | Date;
   description?: string;
 }) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await checkPermission("finance:manage");
 
   const expense = await FinanceEngine.recordExpense({
     categoryId: data.categoryId,
@@ -67,4 +66,59 @@ export async function recordExpense(data: {
   revalidatePath("/finance/pnl");
 
   return expense;
+}
+
+/**
+ * Creates a new expense category.
+ */
+export async function createExpenseCategory(data: unknown) {
+  const session = await checkPermission("finance:manage");
+
+  const validated = expenseCategorySchema.parse(data);
+
+  const category = await db.expenseCategory.create({
+    data: validated,
+  });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.create,
+    module: "finance",
+    recordId: category.id,
+    recordTable: "expense_categories",
+    newValues: category,
+  });
+
+  revalidatePath("/settings/expense-categories");
+  return category;
+}
+
+/**
+ * Updates an existing expense category.
+ */
+export async function updateExpenseCategory(id: string, data: unknown) {
+  const session = await checkPermission("finance:manage");
+
+  const validated = expenseCategorySchema.parse(data);
+
+  const oldValues = await db.expenseCategory.findUnique({ where: { id } });
+  if (!oldValues) throw new Error("Category not found");
+
+  const category = await db.expenseCategory.update({
+    where: { id },
+    data: validated,
+  });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.update,
+    module: "finance",
+    recordId: category.id,
+    recordTable: "expense_categories",
+    oldValues,
+    newValues: category,
+  });
+
+  revalidatePath("/settings/expense-categories");
+  return category;
 }

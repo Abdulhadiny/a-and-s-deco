@@ -5,9 +5,9 @@ import { useSession } from "next-auth/react";
 export function usePermissions() {
   const { data: session, status } = useSession();
 
-  const user = session?.user as any;
-  const role = user?.role as string | undefined;
-  const permissions = (user?.permissions ?? []) as string[];
+  const user = session?.user;
+  const role = user?.role;
+  const permissions = user?.permissions ?? [];
 
   // For as-deco, role name 'admin' is the super role
   const isAdmin = role === "admin";
