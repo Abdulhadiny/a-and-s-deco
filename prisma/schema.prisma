@@ -62,6 +62,11 @@ enum QuoteStatus {
   DECLINED
 }
 
+enum QuoteType {
+  RENTAL
+  DAMAGE
+}
+
 // ─── SYSTEM & AUTH ─────────────────────────────────
 
 model Location {
@@ -307,6 +312,7 @@ model EventItem {
 model Quote {
   id            String        @id @default(cuid())
   eventId       String        @map("event_id")
+  type          QuoteType     @default(RENTAL)
   status        QuoteStatus   @default(DRAFT)
   subtotal      Decimal       @map("subtotal") @db.Decimal(18, 2)
   discount      Decimal?      @db.Decimal(18, 2)

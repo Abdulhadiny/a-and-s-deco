@@ -4,9 +4,48 @@ import { db } from "@/lib/db";
 import { checkPermission } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
 import { AuditAction, Prisma } from "@/generated/prisma";
-import { userSchema } from "@/lib/validators";
+import { userSchema, profileSchema } from "@/lib/validators";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+
+/**
+ * Updates the current user's own profile (name and/or password).
+ */
+export async function updateProfile(data: unknown) {
+  const session = await checkPermission("inventory:read"); // any authenticated user
+
+  const validated = profileSchema.parse(data);
+
+  const user = await db.user.findUnique({ where: { id: session.user.id! } });
+  if (!user) throw new Error("User not found");
+
+  const passwordValid = await bcrypt.compare(validated.currentPassword, user.passwordHash);
+  if (!passwordValid) throw new Error("Current password is incorrect");
+
+  const updateData: Prisma.UserUncheckedUpdateInput = {
+    name: validated.name,
+  };
+
+  if (validated.newPassword) {
+    updateData.passwordHash = await bcrypt.hash(validated.newPassword, 12);
+  }
+
+  const updated = await db.user.update({
+    where: { id: session.user.id! },
+    data: updateData,
+  });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.update,
+    module: "users",
+    recordId: updated.id,
+    recordTable: "users",
+    newValues: { name: updated.name, passwordChanged: !!validated.newPassword },
+  });
+
+  revalidatePath("/settings/profile");
+}
 
 /**
  * Creates a new user.

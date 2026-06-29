@@ -24,6 +24,7 @@ import {
   CalendarPlusIcon,
   UserPlusIcon,
 } from "lucide-react";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 interface Customer {
   id: string;
@@ -77,6 +78,8 @@ export function EventForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
 
   const [customers, setCustomers] = useState(initialCustomers);
   const [customerId, setCustomerId] = useState(event?.customerId ?? "");
@@ -106,26 +109,36 @@ export function EventForm({
       return;
     }
 
+    setPendingFormData(formData);
+    setShowConfirm(true);
+  }
+
+  function handleConfirmedSubmit() {
+    if (!pendingFormData) return;
+    setShowConfirm(false);
     startTransition(async () => {
       try {
         if (mode === "edit" && event) {
-          await updateEvent(event.id, formData);
+          await updateEvent(event.id, pendingFormData);
           setSuccess(true);
           router.refresh();
           setTimeout(() => setSuccess(false), 3000);
         } else {
-          const created = await createEvent(formData);
+          const created = await createEvent(pendingFormData);
           router.push(`/events/${created.id}`);
         }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to save event."
         );
+      } finally {
+        setPendingFormData(null);
       }
     });
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Customer */}
@@ -317,6 +330,16 @@ export function EventForm({
         </Button>
       </div>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={handleConfirmedSubmit}
+      title={mode === "edit" ? "Save Changes" : "Create Event"}
+      description={mode === "edit" ? "Save changes to this event?" : "Create this new event?"}
+      confirmLabel={mode === "edit" ? "Yes, Save" : "Yes, Create Event"}
+      isLoading={isPending}
+    />
+    </>
   );
 }
 

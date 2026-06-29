@@ -27,7 +27,7 @@ export default async function NewItemPage() {
           <span className="sr-only">Back to inventory</span>
         </Button>
         <div>
-          <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+          <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground">
             Add Items
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -36,7 +36,7 @@ export default async function NewItemPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>New Inventory Item</CardTitle>
           <CardDescription>

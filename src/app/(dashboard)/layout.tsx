@@ -32,9 +32,6 @@ export default async function DashboardLayout({
               {children}
             </div>
           </main>
-
-          {/* Subtle Industrial Pattern */}
-          <div className="absolute inset-0 -z-10 pointer-events-none opacity-[0.02] bg-[radial-gradient(var(--primary)_1px,transparent_1px)] [background-size:32px_32px]" />
         </div>
       </div>
     </SidebarProvider>

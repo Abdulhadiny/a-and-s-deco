@@ -55,6 +55,20 @@ export const optionalCuid = (msg = "Invalid selection") =>
 
 // ── Auth & Users ────────────────────────────────────────────────
 
+export const profileSchema = z.object({
+  name: trimmedString(2, 200, "Name"),
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z
+    .string()
+    .min(6, "New password must be at least 6 characters")
+    .max(128, "Password is too long")
+    .optional()
+    .or(z.literal("")),
+}).refine(
+  (data) => !data.newPassword || data.newPassword !== data.currentPassword,
+  { message: "New password must be different from current password", path: ["newPassword"] }
+);
+
 export const loginSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email is too long"),
   password: z.string().min(6, "Password must be at least 6 characters").max(128, "Password is too long"),
@@ -106,4 +120,15 @@ export const systemConfigSchema = z.object({
 export const expenseCategorySchema = z.object({
   name: trimmedString(2, 100, "Expense category name"),
   isActive: z.boolean(),
+});
+
+export const reconcileDamagesSchema = z.object({
+  eventId: z.string().cuid(),
+  items: z.array(z.object({
+    eventItemId: z.string().cuid(),
+    itemName: z.string().min(1),
+    condition: z.enum(["DAMAGED", "MISSING"]),
+    amount: z.number().positive("Amount must be greater than 0"),
+    notes: z.string().optional(),
+  })).min(1, "At least one item required"),
 });

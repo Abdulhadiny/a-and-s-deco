@@ -11,10 +11,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
 import { EventForm } from "@/components/events/event-form";
 
-type CustomerEntry = Awaited<ReturnType<typeof getCustomers>>[number];
+type CustomerEntry = Awaited<ReturnType<typeof getCustomers>>["customers"][number];
 
 export default async function NewEventPage() {
-  const customers = await getCustomers();
+  const { customers } = await getCustomers({ pageSize: 1000 });
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,7 +29,7 @@ export default async function NewEventPage() {
           <span className="sr-only">Back to events</span>
         </Button>
         <div>
-          <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+          <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground">
             New Event
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -38,7 +38,7 @@ export default async function NewEventPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>Event Details</CardTitle>
           <CardDescription>

@@ -6,69 +6,35 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EventCalendar } from "@/components/events/event-calendar";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   CalendarDaysIcon,
   PlusIcon,
   MapPinIcon,
   UserIcon,
   PackageIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 
-type EventEntry = Awaited<ReturnType<typeof getEvents>>[number];
+type EventEntry = Awaited<ReturnType<typeof getEvents>>["items"][number];
 type CalendarEventEntry = Awaited<ReturnType<typeof getEventsForMonth>>[number];
+
+const PAGE_SIZE = 12;
 
 function eventTypeBadge(eventType: string) {
   switch (eventType) {
     case "WEDDING":
-      return (
-        <Badge className="bg-pink-500/10 text-pink-700 dark:text-pink-400">
-          Wedding
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-violet/10 text-violet ring-1 ring-inset ring-violet/20">Wedding</span>;
     case "NAMING":
-      return (
-        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-          Naming
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-info/10 text-info ring-1 ring-inset ring-info/20">Naming</span>;
     case "BIRTHDAY":
-      return (
-        <Badge className="bg-orange-500/10 text-orange-700 dark:text-orange-400">
-          Birthday
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-warning/10 text-warning ring-1 ring-inset ring-warning/20">Birthday</span>;
     case "GRADUATION":
-      return (
-        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-          Graduation
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-success/10 text-success ring-1 ring-inset ring-success/20">Graduation</span>;
     default:
       return <Badge variant="secondary">Other</Badge>;
-  }
-}
-
-function statusBadge(status: EventStatus) {
-  switch (status) {
-    case "UPCOMING":
-      return (
-        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-          Upcoming
-        </Badge>
-      );
-    case "IN_PROGRESS":
-      return (
-        <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
-          In Progress
-        </Badge>
-      );
-    case "COMPLETED":
-      return <Badge variant="default">Completed</Badge>;
-    case "CANCELLED":
-      return <Badge variant="destructive">Cancelled</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
   }
 }
 
@@ -81,20 +47,27 @@ export default async function EventsPage({
 
   const now = new Date();
   const year =
-    typeof params.year === "string"
-      ? parseInt(params.year, 10)
-      : now.getFullYear();
+    typeof params.year === "string" ? parseInt(params.year, 10) : now.getFullYear();
   const month =
-    typeof params.month === "string"
-      ? parseInt(params.month, 10)
-      : now.getMonth();
+    typeof params.month === "string" ? parseInt(params.month, 10) : now.getMonth();
+  const page = typeof params.page === "string" ? Math.max(1, parseInt(params.page, 10) || 1) : 1;
 
-  const [calendarEvents, upcomingEvents] = await Promise.all([
+  const [calendarEvents, { items: upcomingEvents, total }] = await Promise.all([
     getEventsForMonth(year, month),
-    getEvents({ status: "UPCOMING" as EventStatus }),
+    getEvents({ status: "UPCOMING" as EventStatus, page, pageSize: PAGE_SIZE }),
   ]);
 
-  // Serialize dates for the client calendar component
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  function buildPageHref(p: number) {
+    const qs = new URLSearchParams();
+    if (params.year) qs.set("year", String(year));
+    if (params.month) qs.set("month", String(month));
+    if (p > 1) qs.set("page", String(p));
+    const str = qs.toString();
+    return `/events${str ? `?${str}` : ""}`;
+  }
+
   const calendarData = calendarEvents.map((ev: CalendarEventEntry) => ({
     id: ev.id,
     title: ev.title,
@@ -109,7 +82,7 @@ export default async function EventsPage({
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+          <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground">
             Events
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -123,11 +96,7 @@ export default async function EventsPage({
       </div>
 
       {/* Calendar */}
-      <EventCalendar
-        events={calendarData}
-        initialYear={year}
-        initialMonth={month}
-      />
+      <EventCalendar events={calendarData} initialYear={year} initialMonth={month} />
 
       <Separator />
 
@@ -135,15 +104,15 @@ export default async function EventsPage({
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <CalendarDaysIcon className="size-4 text-muted-foreground" />
-          <h2 className="text-base font-medium">
-            Upcoming Events ({upcomingEvents.length})
+          <h2 className="text-base font-semibold">
+            Upcoming Events ({total})
           </h2>
         </div>
 
         {upcomingEvents.length === 0 ? (
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <CalendarDaysIcon className="size-10 text-muted-foreground" />
+              <CalendarDaysIcon className="size-10 text-muted-foreground/40" />
               <div>
                 <p className="font-medium">No upcoming events</p>
                 <p className="text-sm text-muted-foreground">
@@ -157,59 +126,78 @@ export default async function EventsPage({
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {upcomingEvents.map((event: EventEntry) => (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="group"
-              >
-                <Card className="h-full transition-shadow hover:ring-2 hover:ring-primary/20">
-                  <CardContent className="flex flex-col gap-3">
-                    {/* Title & badges */}
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="truncate text-sm font-medium group-hover:text-primary">
-                        {event.title}
-                      </p>
-                      {eventTypeBadge(event.eventType)}
-                    </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {upcomingEvents.map((event: EventEntry) => (
+                <Link key={event.id} href={`/events/${event.id}`} className="group">
+                  <Card className="h-full shadow-sm transition-shadow hover:ring-2 hover:ring-primary/20">
+                    <CardContent className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="truncate text-sm font-semibold group-hover:text-primary">
+                          {event.title}
+                        </p>
+                        {eventTypeBadge(event.eventType)}
+                      </div>
 
-                    {/* Date */}
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <CalendarDaysIcon className="size-3" />
-                      {format(new Date(event.eventDate), "EEE, MMM d, yyyy")}
-                    </div>
-
-                    {/* Customer */}
-                    {event.customer && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <UserIcon className="size-3" />
-                        {event.customer.name}
+                        <CalendarDaysIcon className="size-3" />
+                        {format(new Date(event.eventDate), "EEE, MMM d, yyyy")}
                       </div>
-                    )}
 
-                    {/* Venue */}
-                    {event.venue && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MapPinIcon className="size-3" />
-                        <span className="truncate">{event.venue}</span>
-                      </div>
-                    )}
+                      {event.customer && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <UserIcon className="size-3" />
+                          {event.customer.name}
+                        </div>
+                      )}
 
-                    {/* Status & item count */}
-                    <div className="flex items-center justify-between">
-                      {statusBadge(event.status)}
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <PackageIcon className="size-3" />
-                        {event._count.eventItems} item
-                        {event._count.eventItems !== 1 ? "s" : ""}
+                      {event.venue && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <MapPinIcon className="size-3" />
+                          <span className="truncate">{event.venue}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <StatusBadge status={event.status} />
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <PackageIcon className="size-3" />
+                          {event._count.eventItems} item{event._count.eventItems !== 1 ? "s" : ""}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={page > 1 ? <Link href={buildPageHref(page - 1)} /> : undefined}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeftIcon className="size-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={page < totalPages ? <Link href={buildPageHref(page + 1)} /> : undefined}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                  <ChevronRightIcon className="size-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

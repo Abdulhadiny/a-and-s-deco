@@ -30,7 +30,7 @@ export default async function PnLPage() {
       />
       <FinanceNav />
 
-      <Card className="border border-border bg-card">
+      <Card className="border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="text-base font-semibold text-foreground">
             Income — {monthLabel}
@@ -39,18 +39,18 @@ export default async function PnLPage() {
         <CardContent>
           <div className="flex items-center justify-between border-b border-border/50 py-3">
             <span className="text-sm text-foreground/80">Total Payments Received</span>
-            <span className="text-sm font-medium text-emerald-500">
+            <span className="text-sm font-medium text-success">
               {formatCurrency(pnl.breakdown.sales)}
             </span>
           </div>
           <div className="flex items-center justify-between py-3 font-semibold">
             <span className="text-foreground">Total Income</span>
-            <span className="text-emerald-500">{formatCurrency(pnl.totalIncome)}</span>
+            <span className="text-success">{formatCurrency(pnl.totalIncome)}</span>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-card">
+      <Card className="border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="text-base font-semibold text-foreground">
             Expenses — {monthLabel}
@@ -59,24 +59,24 @@ export default async function PnLPage() {
         <CardContent>
           <div className="flex items-center justify-between border-b border-border/50 py-3">
             <span className="text-sm text-foreground/80">Operational Expenses</span>
-            <span className="text-sm font-medium text-rose-500">
+            <span className="text-sm font-medium text-destructive">
               {formatCurrency(pnl.breakdown.expenses)}
             </span>
           </div>
           <div className="flex items-center justify-between py-3 font-semibold">
             <span className="text-foreground">Total Expenses</span>
-            <span className="text-rose-500">{formatCurrency(pnl.totalExpenses)}</span>
+            <span className="text-destructive">{formatCurrency(pnl.totalExpenses)}</span>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-card">
+      <Card className="border border-border bg-card shadow-sm">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <span className="text-base font-semibold text-foreground">Net Profit / Loss</span>
             <span
               className={`text-2xl font-bold ${
-                pnl.netProfit >= 0 ? "text-emerald-500" : "text-rose-500"
+                pnl.netProfit >= 0 ? "text-success" : "text-destructive"
               }`}
             >
               {formatCurrency(pnl.netProfit)}

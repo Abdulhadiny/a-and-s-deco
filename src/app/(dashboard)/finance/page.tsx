@@ -111,7 +111,7 @@ export default async function FinanceOverviewPage() {
         />
       </div>
 
-      <Card className="border-border bg-card">
+      <Card className="border-border bg-card shadow-sm">
         <CardHeader className="border-b border-border/50 pb-4">
           <CardTitle className="text-base font-semibold text-foreground">Recent Transactions</CardTitle>
         </CardHeader>
@@ -123,13 +123,13 @@ export default async function FinanceOverviewPage() {
               {recentTransactions.map((t) => (
                 <div key={t.id} className="flex items-center justify-between group">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-foreground/90 group-hover:text-white transition-colors">{t.label}</p>
+                    <p className="text-sm font-medium text-foreground/90 group-hover:text-foreground transition-colors">{t.label}</p>
                     <p className="text-xs text-muted-foreground">
                       {t.sublabel} — {formatDate(t.date)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium border ${t.type === "Income" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium border ${t.type === "Income" ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
                       {t.type}
                     </span>
                     <span className="text-sm font-semibold text-foreground/80">

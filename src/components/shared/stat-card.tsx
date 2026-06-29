@@ -68,7 +68,7 @@ export function StatCard({ title, value, icon: Icon, description, trend, color, 
   return (
     <div className={cn("h-full", className)}>
       <div className={cn(
-        "h-full border rounded-xl p-4 md:p-5 transition-colors",
+        "h-full border rounded-xl p-4 md:p-5 transition-colors shadow-sm",
         cs ? cn(cs.card, cs.border) : "bg-card border-border"
       )}>
         <div className="flex items-start justify-between gap-3">

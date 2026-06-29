@@ -4,19 +4,34 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { checkPermission } from "@/lib/auth";
 
-export async function getCustomers(search?: string) {
-  return db.customer.findMany({
-    where: search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { phone: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
-    include: { _count: { select: { events: true } } },
-    orderBy: { name: "asc" },
-  });
+export async function getCustomers(filters: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+} = {}) {
+  const { search, page = 1, pageSize = 24 } = filters;
+
+  const where = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { phone: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
+    : undefined;
+
+  const [customers, total] = await db.$transaction([
+    db.customer.findMany({
+      where,
+      include: { _count: { select: { events: true } } },
+      orderBy: { name: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.customer.count({ where }),
+  ]);
+
+  return { customers, total };
 }
 
 export async function getCustomer(id: string) {

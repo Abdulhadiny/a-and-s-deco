@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -25,8 +27,6 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui/sheet";
 import { useSidebar } from "@/components/providers/sidebar-provider";
 
@@ -60,7 +60,7 @@ function NavContent({
   const pathname = usePathname();
 
   return (
-    <div className={cn("flex flex-col gap-1", collapsed ? "py-6" : "py-4")}>
+    <div className={cn("flex flex-col gap-0.5", collapsed ? "py-6" : "py-4")}>
       {items.map((item) => {
         const isActive = item.href === "/"
           ? pathname === "/"
@@ -73,25 +73,27 @@ function NavContent({
             className={cn(
               "relative flex items-center rounded-lg transition-all duration-200 group overflow-hidden shrink-0",
               collapsed
-                ? "h-12 w-12 justify-center mx-auto"
+                ? "h-11 w-11 justify-center mx-auto"
                 : "w-full h-10 px-3 gap-3",
               isActive
-                ? "text-white font-semibold"
-                : "text-sidebar-foreground/60 font-medium hover:text-sidebar-foreground hover:bg-white/10"
+                ? "text-sidebar-primary-foreground font-semibold"
+                : "text-sidebar-foreground/55 font-medium hover:text-sidebar-foreground hover:bg-white/5"
             )}
           >
             {isActive && (
               <motion.div
                 layoutId={collapsed ? "activeNavIndicatorCollapsed" : "activeNavIndicator"}
-                className="absolute inset-0 bg-primary -z-10 rounded-lg"
+                className="absolute inset-0 bg-sidebar-primary -z-10 rounded-lg"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
             )}
 
             <div className="flex h-5 w-5 shrink-0 items-center justify-center">
               <item.icon className={cn(
-                "h-5 w-5 transition-colors duration-200",
-                isActive ? "text-white" : "group-hover:text-sidebar-foreground"
+                "h-[18px] w-[18px] transition-colors duration-200",
+                isActive
+                  ? "text-sidebar-primary-foreground"
+                  : "group-hover:text-sidebar-foreground"
               )} />
             </div>
 
@@ -127,6 +129,7 @@ function NavContent({
 export function Sidebar() {
   const { data: session, status } = useSession();
   const { isOpen, isCollapsed, setIsOpen, setIsCollapsed } = useSidebar();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isLoading = status === "loading";
   const user = session?.user as any;
@@ -139,6 +142,9 @@ export function Sidebar() {
     return permissions.includes(item.permission);
   });
 
+  const userInitial = user?.name?.charAt(0)?.toUpperCase() || "U";
+  const roleName = typeof role === "string" ? role : (role?.name ?? "Staff");
+
   return (
     <TooltipProvider>
       {/* Desktop sidebar */}
@@ -146,7 +152,8 @@ export function Sidebar() {
         style={{ width: isCollapsed ? 80 : 260 }}
         className="sticky top-0 h-screen hidden md:flex flex-col z-40 bg-sidebar border-r border-sidebar-border overflow-hidden transition-[width] duration-200 ease-in-out"
       >
-        <div className="flex h-16 items-center px-4 shrink-0">
+        {/* Header */}
+        <div className="flex h-16 items-center px-4 shrink-0 border-b border-sidebar-border">
           <div className={cn(
             "flex items-center overflow-hidden w-full",
             isCollapsed ? "justify-center" : "gap-3"
@@ -154,11 +161,14 @@ export function Sidebar() {
             <button
               onClick={() => isCollapsed && setIsCollapsed(false)}
               className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm",
-                isCollapsed && "cursor-pointer hover:bg-primary/90 transition-colors"
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm",
+                isCollapsed && "cursor-pointer hover:bg-sidebar-primary/90 transition-colors"
               )}
             >
-              {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+              {isCollapsed
+                ? <ChevronRight className="h-4 w-4" />
+                : <Sparkles className="h-4 w-4" />
+              }
             </button>
             <AnimatePresence>
               {!isCollapsed && (
@@ -170,17 +180,19 @@ export function Sidebar() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-base font-bold tracking-tight text-sidebar-foreground leading-none">A&S Deco</span>
-                      <span className="text-[10px] font-medium text-sidebar-foreground/50 uppercase tracking-widest mt-1">Management System</span>
+                      <span className="text-sm font-bold tracking-tight text-sidebar-foreground leading-none">
+                        A&S Decorations
+                      </span>
+                      <span className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-widest mt-1">
+                        Management System
+                      </span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
                       onClick={() => setIsCollapsed(true)}
-                      className="h-8 w-8 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors ml-2"
+                      className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors ml-2"
                     >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -192,18 +204,38 @@ export function Sidebar() {
           <NavContent items={filteredItems} collapsed={isCollapsed} />
         </ScrollArea>
 
-        <div className="p-4 mt-auto border-t border-sidebar-border shrink-0">
-          <Button
-            variant="ghost"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className={cn(
-              "w-full justify-start gap-3 rounded-lg h-10 px-3 text-sm font-medium text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-colors",
-              isCollapsed && "h-12 w-12 justify-center mx-auto px-0"
-            )}
-          >
-            <LogOut className="h-4.5 w-4.5 shrink-0" />
-            {!isCollapsed && <span>Log Out</span>}
-          </Button>
+        {/* User footer */}
+        <div className="p-3 mt-auto border-t border-sidebar-border shrink-0">
+          {!isCollapsed ? (
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors group cursor-default">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/20 text-sidebar-primary text-sm font-semibold">
+                {userInitial}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate leading-none">
+                  {user?.name}
+                </p>
+                <p className="text-[11px] text-sidebar-foreground/40 truncate mt-0.5 capitalize">
+                  {roleName}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-sidebar-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                title="Log out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex h-11 w-11 items-center justify-center rounded-lg mx-auto text-sidebar-foreground/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
+              title="Log out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -212,12 +244,16 @@ export function Sidebar() {
         <SheetContent side="left" className="w-[280px] p-0 bg-sidebar border-r border-sidebar-border">
           <div className="flex h-16 items-center px-4 shrink-0 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                <Sparkles className="h-5 w-5" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+                <Sparkles className="h-4 w-4" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight text-sidebar-foreground leading-none">A&S Decorations</span>
-                <span className="text-[10px] font-medium text-sidebar-foreground/50 uppercase tracking-widest mt-1">Management</span>
+                <span className="text-sm font-bold tracking-tight text-sidebar-foreground leading-none">
+                  A&S Decorations
+                </span>
+                <span className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-widest mt-1">
+                  Management
+                </span>
               </div>
             </div>
           </div>
@@ -227,18 +263,39 @@ export function Sidebar() {
               onNavigate={() => setIsOpen(false)}
             />
           </ScrollArea>
-          <div className="p-4 mt-auto border-t border-sidebar-border">
-            <Button
-              variant="ghost"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="w-full justify-start gap-3 rounded-lg h-10 px-3 text-sm font-medium text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-colors"
-            >
-              <LogOut className="h-4.5 w-4.5 shrink-0" />
-              <span>Log Out</span>
-            </Button>
+          <div className="p-3 mt-auto border-t border-sidebar-border">
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/20 text-sidebar-primary text-sm font-semibold">
+                {userInitial}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate leading-none">
+                  {user?.name}
+                </p>
+                <p className="text-[11px] text-sidebar-foreground/40 truncate mt-0.5 capitalize">
+                  {roleName}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-sidebar-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                title="Log out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
+      <ConfirmationDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign Out"
+        description="You will be signed out and redirected to the login page."
+        confirmLabel="Yes, Sign Out"
+        variant="destructive"
+        onConfirm={() => { setShowLogoutConfirm(false); signOut({ callbackUrl: "/login" }); }}
+      />
     </TooltipProvider>
   );
 }

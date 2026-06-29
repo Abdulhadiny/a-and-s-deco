@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { EventStatus, ReturnCondition, AuditAction, EventType } from "@/generated/prisma";
+import { EventStatus, ReturnCondition, AuditAction, EventType, QuoteType, QuoteStatus, PaymentStatus } from "@/generated/prisma";
+import { reconcileDamagesSchema } from "@/lib/validators";
 import { checkPermission } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
 import { RentalEngine } from "@/lib/engines/rental-engine";
@@ -12,23 +13,46 @@ export async function getEvents(filters?: {
   status?: EventStatus;
   month?: number;
   year?: number;
+  page?: number;
+  pageSize?: number;
 }) {
+  const { status, month, year, page = 1, pageSize } = filters ?? {};
+
   const where: Record<string, unknown> = {};
-  if (filters?.status) where.status = filters.status;
-  if (filters?.month !== undefined && filters?.year !== undefined) {
-    const start = new Date(filters.year, filters.month, 1);
-    const end = new Date(filters.year, filters.month + 1, 0);
+  if (status) where.status = status;
+  if (month !== undefined && year !== undefined) {
+    const start = new Date(year, month, 1);
+    const end = new Date(year, month + 1, 0);
     where.eventDate = { gte: start, lte: end };
   }
 
-  return db.event.findMany({
-    where,
-    include: {
-      customer: true,
-      _count: { select: { eventItems: true } },
-    },
-    orderBy: { eventDate: "asc" },
-  });
+  if (!pageSize) {
+    const items = await db.event.findMany({
+      where,
+      include: {
+        customer: true,
+        _count: { select: { eventItems: true } },
+      },
+      orderBy: { eventDate: "asc" },
+    });
+    return { items, total: items.length };
+  }
+
+  const [items, total] = await db.$transaction([
+    db.event.findMany({
+      where,
+      include: {
+        customer: true,
+        _count: { select: { eventItems: true } },
+      },
+      orderBy: { eventDate: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.event.count({ where }),
+  ]);
+
+  return { items, total };
 }
 
 export async function getEvent(id: string) {
@@ -289,6 +313,91 @@ export async function returnAllItems(eventId: string, locationId?: string) {
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/inventory");
+}
+
+export async function reconcileDamages(input: unknown) {
+  const session = await checkPermission("events:manage");
+
+  const parsed = reconcileDamagesSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
+  }
+  const { eventId, items } = parsed.data;
+
+  const result = await db.$transaction(async (tx) => {
+    const event = await tx.event.findUnique({ where: { id: eventId } });
+    if (!event) throw new Error("Event not found");
+
+    const existingDamageQuote = await tx.quote.findFirst({
+      where: { eventId, type: QuoteType.DAMAGE },
+    });
+    if (existingDamageQuote) throw new Error("Already reconciled");
+
+    const total = items.reduce((sum, item) => sum + item.amount, 0);
+
+    const quote = await tx.quote.create({
+      data: {
+        eventId,
+        type: QuoteType.DAMAGE,
+        status: QuoteStatus.DRAFT,
+        subtotal: total,
+        total,
+        amountPaid: 0,
+        paymentStatus: PaymentStatus.outstanding,
+      },
+    });
+
+    for (const item of items) {
+      await tx.quoteLine.create({
+        data: {
+          quoteId: quote.id,
+          quantity: 1,
+          description: `${item.itemName} — ${item.condition}`,
+          unitPrice: item.amount,
+          lineTotal: item.amount,
+        },
+      });
+    }
+
+    const damageCategory = await tx.expenseCategory.findUnique({
+      where: { name: "Damage & Loss" },
+    });
+    if (!damageCategory) {
+      throw new Error(
+        'Expense category "Damage & Loss" not found. Run: npx tsx prisma/seed.ts'
+      );
+    }
+
+    for (const item of items) {
+      await tx.expense.create({
+        data: {
+          categoryId: damageCategory.id,
+          amount: item.amount,
+          expenseDate: new Date(),
+          description: `Write-off: ${item.itemName} (${item.condition}) — Event ${eventId}`,
+          createdBy: session.user.id,
+        },
+      });
+    }
+
+    return quote;
+  });
+
+  await logAction({
+    userId: session.user.id!,
+    action: AuditAction.create,
+    module: "finance",
+    recordId: result.id,
+    recordTable: "quotes",
+    newValues: { type: "DAMAGE", eventId, itemCount: items.length },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/finance");
+  revalidatePath("/finance/pnl");
+  revalidatePath("/finance/expenses");
+
+  return result;
 }
 
 export async function getAvailableItemsAction(

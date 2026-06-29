@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { recordExpense } from "@/lib/actions/finance";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 interface Category {
   id: string;
@@ -28,11 +29,13 @@ export function ExpenseForm({
   locations: Location[];
 }) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingData, setPendingData] = useState<{ categoryId: string; locationId?: string; amount: number; expenseDate: string; description?: string } | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
     const data = {
@@ -45,26 +48,35 @@ export function ExpenseForm({
 
     if (!data.categoryId || !data.amount || !data.expenseDate) {
       toast.error("Please fill all required fields");
-      setIsLoading(false);
       return;
     }
 
+    setPendingData(data);
+    setShowConfirm(true);
+  }
+
+  async function handleConfirmedSubmit() {
+    if (!pendingData) return;
+    setShowConfirm(false);
+    setIsLoading(true);
     try {
-      await recordExpense(data);
+      await recordExpense(pendingData);
       toast.success("Expense recorded successfully");
-      (e.target as HTMLFormElement).reset();
+      formRef.current?.reset();
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to record expense");
     } finally {
       setIsLoading(false);
+      setPendingData(null);
     }
   }
 
   const selectClass = "flex h-10 w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+    <>
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 pt-4">
       <div className="space-y-2">
         <Label htmlFor="categoryId" className="text-foreground/80">Category</Label>
         <select id="categoryId" name="categoryId" className={selectClass} required>
@@ -126,5 +138,15 @@ export function ExpenseForm({
         Save Expense
       </Button>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={handleConfirmedSubmit}
+      title="Record Expense"
+      description="Record this expense entry?"
+      confirmLabel="Yes, Record"
+      isLoading={isLoading}
+    />
+    </>
   );
 }

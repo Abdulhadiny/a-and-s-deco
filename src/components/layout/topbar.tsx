@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSidebar } from "@/components/providers/sidebar-provider";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 export function Topbar() {
   const { data: session } = useSession();
@@ -28,6 +29,7 @@ export function Topbar() {
   const { toggle } = useSidebar();
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -188,7 +190,7 @@ export function Topbar() {
             <DropdownMenuSeparator className="mx-2 my-1" />
             <DropdownMenuItem
               className="cursor-pointer gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => setShowLogoutConfirm(true)}
             >
               <LogOut className="h-4 w-4" />
               <span>Log Out</span>
@@ -196,6 +198,15 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <ConfirmationDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign Out"
+        description="You will be signed out and redirected to the login page."
+        confirmLabel="Yes, Sign Out"
+        variant="destructive"
+        onConfirm={() => { setShowLogoutConfirm(false); signOut({ callbackUrl: "/login" }); }}
+      />
     </header>
   );
 }

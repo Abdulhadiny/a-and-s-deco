@@ -78,7 +78,7 @@ export default async function CustomerDetailPage({
     {
       key: "amount",
       header: "Amount",
-      cell: (row) => <span className="font-semibold text-emerald-500">{formatNGN.format(Number(row.amount))}</span>,
+      cell: (row) => <span className="font-semibold text-success tabular-nums">{formatNGN.format(Number(row.amount))}</span>,
     },
     {
       key: "method",
@@ -101,14 +101,14 @@ export default async function CustomerDetailPage({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-white"
+            className="h-8 w-8 text-muted-foreground"
             render={<Link href="/customers" />}
           >
             <ArrowLeftIcon />
             <span className="sr-only">Back to customers</span>
           </Button>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white md:text-2xl">
+            <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground">
               {customer.name}
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -122,7 +122,7 @@ export default async function CustomerDetailPage({
         {/* Left column: Info & Stats */}
         <div className="flex flex-col gap-6 lg:col-span-1">
           {/* Financial Summary */}
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-primary" />
@@ -137,12 +137,12 @@ export default async function CustomerDetailPage({
                 </div>
                 <div className="flex justify-between items-end">
                   <span className="text-sm text-muted-foreground">Total Paid</span>
-                  <span className="text-sm font-medium text-emerald-500">{formatNGN.format(totalPaid)}</span>
+                  <span className="text-sm font-medium text-success">{formatNGN.format(totalPaid)}</span>
                 </div>
                 <Separator className="bg-accent" />
                 <div className="flex justify-between items-end">
                   <span className="text-sm font-bold text-foreground">Balance</span>
-                  <span className={`text-base font-bold ${outstandingBalance > 0 ? "text-rose-500" : "text-emerald-500"}`}>
+                  <span className={`text-base font-bold ${outstandingBalance > 0 ? "text-destructive" : "text-success"}`}>
                     {formatNGN.format(outstandingBalance)}
                   </span>
                 </div>
@@ -150,7 +150,7 @@ export default async function CustomerDetailPage({
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="text-foreground">Contact Info</CardTitle>
             </CardHeader>
@@ -208,7 +208,7 @@ export default async function CustomerDetailPage({
         {/* Right column: Actions & History */}
         <div className="flex flex-col gap-6 lg:col-span-2">
           {/* Record Payment Form */}
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-2">
                 <Receipt className="h-5 w-5 text-primary" />
@@ -227,7 +227,7 @@ export default async function CustomerDetailPage({
           </Card>
 
           {/* Payment History */}
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="text-foreground">Payment History</CardTitle>
             </CardHeader>
@@ -237,7 +237,7 @@ export default async function CustomerDetailPage({
           </Card>
 
           {/* Event history */}
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-2">
                 <CalendarDaysIcon className="size-5 text-primary" />
@@ -258,7 +258,7 @@ export default async function CustomerDetailPage({
                       className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3 transition-colors hover:bg-accent/50 hover:border-border group"
                     >
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-foreground/90 group-hover:text-white">
+                        <span className="text-sm font-medium text-foreground group-hover:text-primary">
                           {event.title}
                         </span>
                         <span className="flex items-center gap-3 text-xs text-muted-foreground">

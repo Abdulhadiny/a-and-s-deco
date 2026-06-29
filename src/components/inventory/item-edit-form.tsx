@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2Icon, SaveIcon } from "lucide-react";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -46,6 +47,8 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
 
   const [status, setStatus] = useState<ItemStatus>(item.status);
   const [categoryId, setCategoryId] = useState(item.categoryId);
@@ -60,9 +63,16 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
     formData.set("status", status);
     formData.set("categoryId", categoryId);
 
+    setPendingFormData(formData);
+    setShowConfirm(true);
+  }
+
+  function handleConfirmedSubmit() {
+    if (!pendingFormData) return;
+    setShowConfirm(false);
     startTransition(async () => {
       try {
-        await updateItem(item.id, formData);
+        await updateItem(item.id, pendingFormData);
         setSuccess(true);
         router.refresh();
         // Clear success after 3 seconds
@@ -71,11 +81,14 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
         setError(
           err instanceof Error ? err.message : "Failed to update item.",
         );
+      } finally {
+        setPendingFormData(null);
       }
     });
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Name */}
@@ -218,5 +231,15 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
         </Button>
       </div>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={handleConfirmedSubmit}
+      title="Save Changes"
+      description="Save changes to this inventory item?"
+      confirmLabel="Yes, Save Changes"
+      isLoading={isPending}
+    />
+    </>
   );
 }

@@ -22,6 +22,7 @@ import {
   SaveIcon,
   UserPlusIcon,
 } from "lucide-react";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 interface CustomerData {
   id: string;
@@ -49,6 +50,8 @@ export function CustomerForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,26 +66,36 @@ export function CustomerForm({
       return;
     }
 
+    setPendingFormData(formData);
+    setShowConfirm(true);
+  }
+
+  function handleConfirmedSubmit() {
+    if (!pendingFormData) return;
+    setShowConfirm(false);
     startTransition(async () => {
       try {
         if (mode === "edit" && customer) {
-          await updateCustomer(customer.id, formData);
+          await updateCustomer(customer.id, pendingFormData);
           setSuccess(true);
           router.refresh();
           setTimeout(() => setSuccess(false), 3000);
         } else {
-          const created = await createCustomer(formData);
+          const created = await createCustomer(pendingFormData);
           router.push(`/customers/${created.id}`);
         }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to save customer."
         );
+      } finally {
+        setPendingFormData(null);
       }
     });
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Name */}
@@ -183,6 +196,16 @@ export function CustomerForm({
         </Button>
       </div>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={handleConfirmedSubmit}
+      title={mode === "edit" ? "Save Changes" : "Create Customer"}
+      description={mode === "edit" ? "Save changes to this customer's details?" : "Create this new customer?"}
+      confirmLabel={mode === "edit" ? "Yes, Save" : "Yes, Create"}
+      isLoading={isPending}
+    />
+    </>
   );
 }
 

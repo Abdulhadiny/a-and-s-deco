@@ -4,13 +4,22 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { QuoteStatus } from "@/generated/prisma";
 
-export async function getQuotes() {
-  return db.quote.findMany({
-    include: {
-      event: { include: { customer: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export async function getQuotes(filters: { page?: number; pageSize?: number } = {}) {
+  const { page = 1, pageSize = 20 } = filters;
+
+  const [quotes, total] = await db.$transaction([
+    db.quote.findMany({
+      include: {
+        event: { include: { customer: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.quote.count(),
+  ]);
+
+  return { quotes, total };
 }
 
 export async function getQuote(id: string) {

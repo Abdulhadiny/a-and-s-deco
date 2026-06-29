@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getEvent } from "@/lib/actions/events";
 import { getCustomers } from "@/lib/actions/customers";
 import { getAvailableItems } from "@/lib/availability";
-import { EventStatus, EventType, QuoteStatus } from "@/generated/prisma";
+import { QuoteType } from "@/generated/prisma";
 import {
   Card,
   CardContent,
@@ -22,9 +22,11 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { EventForm } from "@/components/events/event-form";
 import { AllocateItemsDialog } from "@/components/events/allocate-items-dialog";
 import { ReturnItems } from "@/components/events/return-items";
+import { DamageReconciliation } from "@/components/events/damage-reconciliation";
 import { EventStatusActions } from "./event-status-actions";
 import { DeallocateButton } from "./deallocate-button";
 import { GenerateQuoteButton } from "./generate-quote-button";
@@ -43,7 +45,7 @@ import { format } from "date-fns";
 type EventDetail = NonNullable<Awaited<ReturnType<typeof getEvent>>>;
 type EventItemEntry = EventDetail["eventItems"][number];
 type QuoteEntry = EventDetail["quotes"][number];
-type CustomerEntry = Awaited<ReturnType<typeof getCustomers>>[number];
+type CustomerEntry = Awaited<ReturnType<typeof getCustomers>>["customers"][number];
 type AvailableItemEntry = Awaited<ReturnType<typeof getAvailableItems>>[number];
 
 const formatNGN = new Intl.NumberFormat("en-NG", {
@@ -54,73 +56,15 @@ const formatNGN = new Intl.NumberFormat("en-NG", {
 function eventTypeBadge(eventType: string) {
   switch (eventType) {
     case "WEDDING":
-      return (
-        <Badge className="bg-pink-500/10 text-pink-700 dark:text-pink-400">
-          Wedding
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-violet/10 text-violet ring-1 ring-inset ring-violet/20">Wedding</span>;
     case "NAMING":
-      return (
-        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-          Naming
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-info/10 text-info ring-1 ring-inset ring-info/20">Naming</span>;
     case "BIRTHDAY":
-      return (
-        <Badge className="bg-orange-500/10 text-orange-700 dark:text-orange-400">
-          Birthday
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-warning/10 text-warning ring-1 ring-inset ring-warning/20">Birthday</span>;
     case "GRADUATION":
-      return (
-        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-          Graduation
-        </Badge>
-      );
+      return <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-success/10 text-success ring-1 ring-inset ring-success/20">Graduation</span>;
     default:
       return <Badge variant="secondary">Other</Badge>;
-  }
-}
-
-function statusBadge(status: EventStatus) {
-  switch (status) {
-    case "UPCOMING":
-      return (
-        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-          Upcoming
-        </Badge>
-      );
-    case "IN_PROGRESS":
-      return (
-        <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
-          In Progress
-        </Badge>
-      );
-    case "COMPLETED":
-      return <Badge variant="default">Completed</Badge>;
-    case "CANCELLED":
-      return <Badge variant="destructive">Cancelled</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
-}
-
-function quoteStatusBadge(status: QuoteStatus) {
-  switch (status) {
-    case "DRAFT":
-      return <Badge variant="outline">Draft</Badge>;
-    case "SENT":
-      return (
-        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-          Sent
-        </Badge>
-      );
-    case "ACCEPTED":
-      return <Badge variant="default">Accepted</Badge>;
-    case "DECLINED":
-      return <Badge variant="destructive">Declined</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
   }
 }
 
@@ -131,15 +75,23 @@ export default async function EventDetailPage({
 }) {
   const { id } = await params;
 
-  const [event, customers, locations] = await Promise.all([
+  const [event, { customers }, locations] = await Promise.all([
     getEvent(id),
-    getCustomers(),
+    getCustomers({ pageSize: 1000 }),
     import("@/lib/db").then((m) => m.db.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } })),
   ]);
 
   if (!event) {
     notFound();
   }
+
+  const rentalQuotes = event.quotes.filter((q) => q.type === QuoteType.RENTAL);
+  const damageQuote = event.quotes.find((q) => q.type === QuoteType.DAMAGE);
+  const damageItems = event.eventItems.filter(
+    (ei) =>
+      ei.returnedAt &&
+      (ei.returnCondition === "DAMAGED" || ei.returnCondition === "MISSING")
+  );
 
   // Fetch available items for allocation (default location: main-warehouse)
   const availableItems = await getAvailableItems(
@@ -167,7 +119,7 @@ export default async function EventDetailPage({
             <span className="sr-only">Back to events</span>
           </Button>
           <div>
-            <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+            <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground">
               {event.title}
             </h1>
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -185,7 +137,7 @@ export default async function EventDetailPage({
         </div>
         <div className="flex items-center gap-2">
           {eventTypeBadge(event.eventType)}
-          {statusBadge(event.status)}
+          <StatusBadge status={event.status} />
         </div>
       </div>
 
@@ -196,7 +148,7 @@ export default async function EventDetailPage({
         {/* Left column: Event info */}
         <div className="flex flex-col gap-6 lg:col-span-1">
           {/* Quick info card */}
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Event Info</CardTitle>
             </CardHeader>
@@ -263,14 +215,14 @@ export default async function EventDetailPage({
                 <Separator />
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Quotes</dt>
-                  <dd className="font-medium">{event.quotes.length}</dd>
+                  <dd className="font-medium">{rentalQuotes.length}</dd>
                 </div>
               </dl>
             </CardContent>
           </Card>
 
           {/* Quotes section */}
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -287,7 +239,7 @@ export default async function EventDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {event.quotes.length === 0 ? (
+              {rentalQuotes.length === 0 ? (
                 <p className="py-4 text-center text-sm text-muted-foreground">
                   No quotes yet.{" "}
                   {event.eventItems.length > 0
@@ -296,7 +248,7 @@ export default async function EventDetailPage({
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {event.quotes.map((quote: QuoteEntry) => (
+                  {rentalQuotes.map((quote: QuoteEntry) => (
                     <Link
                       key={quote.id}
                       href={`/quotes/${quote.id}`}
@@ -312,19 +264,39 @@ export default async function EventDetailPage({
                           {format(new Date(quote.createdAt), "MMM d, yyyy")}
                         </span>
                       </div>
-                      {quoteStatusBadge(quote.status)}
+                      <StatusBadge status={quote.status} />
                     </Link>
                   ))}
                 </div>
               )}
             </CardContent>
           </Card>
+          <DamageReconciliation
+            eventId={event.id}
+            eventStatus={event.status}
+            damageItems={damageItems.map((ei) => ({
+              id: ei.id,
+              item: { name: ei.item.name, tag: ei.item.tag },
+              returnCondition: ei.returnCondition!,
+              damageNotes: ei.damageNotes,
+            }))}
+            damageQuote={
+              damageQuote
+                ? {
+                    id: damageQuote.id,
+                    total: Number(damageQuote.total),
+                    status: damageQuote.status,
+                    paymentStatus: damageQuote.paymentStatus,
+                  }
+                : undefined
+            }
+          />
         </div>
 
         {/* Right column: Allocated items, Allocate, Return */}
         <div className="flex flex-col gap-6 lg:col-span-2">
           {/* Edit form (collapsible via details) */}
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Edit Event</CardTitle>
               <CardDescription>
@@ -355,7 +327,7 @@ export default async function EventDetailPage({
           </Card>
 
           {/* Allocated Items */}
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -418,11 +390,7 @@ export default async function EventDetailPage({
                           {ei.item.category?.name ?? "-"}
                         </TableCell>
                         <TableCell>
-                          {ei.returnedAt ? (
-                            <Badge variant="secondary">Returned</Badge>
-                          ) : (
-                            <Badge variant="outline">Allocated</Badge>
-                          )}
+                          <StatusBadge status={ei.returnedAt ? "returned" : "allocated"} />
                         </TableCell>
                         {canAllocate && (
                           <TableCell>
@@ -444,7 +412,7 @@ export default async function EventDetailPage({
 
           {/* Return Items */}
           {showReturnSection && (
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UndoIcon className="size-4" />

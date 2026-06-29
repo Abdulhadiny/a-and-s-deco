@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/ui/field-error";
 import { expenseCategorySchema } from "@/lib/validators";
 import { createExpenseCategory, updateExpenseCategory } from "@/lib/actions/finance";
+import { useFormConfirmation } from "@/lib/hooks/use-form-confirmation";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 type ExpenseCategoryFormValues = z.infer<typeof expenseCategorySchema>;
 
@@ -29,6 +31,7 @@ interface ExpenseCategoryFormProps {
 export function ExpenseCategoryForm({ initialData, onSuccess }: ExpenseCategoryFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { showConfirm, setShowConfirm, pendingData, onPreSubmit, resetConfirmation } = useFormConfirmation<ExpenseCategoryFormValues>();
 
   const {
     register,
@@ -48,14 +51,16 @@ export function ExpenseCategoryForm({ initialData, onSuccess }: ExpenseCategoryF
         },
   });
 
-  const onSubmit = async (data: ExpenseCategoryFormValues) => {
+  const onConfirmedSubmit = async () => {
+    if (!pendingData) return;
     setIsLoading(true);
+    setShowConfirm(false);
     try {
       if (initialData) {
-        await updateExpenseCategory(initialData.id, data);
+        await updateExpenseCategory(initialData.id, pendingData);
         toast.success("Expense category updated");
       } else {
-        await createExpenseCategory(data);
+        await createExpenseCategory(pendingData);
         toast.success("Expense category created");
         reset();
       }
@@ -66,11 +71,13 @@ export function ExpenseCategoryForm({ initialData, onSuccess }: ExpenseCategoryF
       toast.error(err.message || "An error occurred");
     } finally {
       setIsLoading(false);
+      resetConfirmation();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <>
+    <form onSubmit={handleSubmit(onPreSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name" className="text-foreground/80 font-semibold text-xs uppercase">Category Name</Label>
         <Input 
@@ -99,5 +106,15 @@ export function ExpenseCategoryForm({ initialData, onSuccess }: ExpenseCategoryF
         {initialData ? "Update Category" : "Create Category"}
       </Button>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={onConfirmedSubmit}
+      title={initialData ? "Update Category" : "Create Expense Category"}
+      description={initialData ? "Save changes to this expense category?" : "Create this new expense category?"}
+      confirmLabel={initialData ? "Yes, Update" : "Yes, Create"}
+      isLoading={isLoading}
+    />
+    </>
   );
 }

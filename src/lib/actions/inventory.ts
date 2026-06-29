@@ -148,39 +148,52 @@ export async function createItem(data: unknown) {
 }
 
 /**
- * Fetches all inventory items with optional filters.
+ * Fetches paginated inventory items with optional filters.
  */
-export async function getItems(filters: { search?: string; categoryId?: string; status?: string } = {}) {
-  const { search, categoryId, status } = filters;
-  
+export async function getItems(filters: {
+  search?: string;
+  categoryId?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+} = {}) {
+  const { search, categoryId, status, page = 1, pageSize = 24 } = filters;
+
   const where: Prisma.ItemWhereInput = {};
-  
+
   if (search) {
     where.OR = [
       { name: { contains: search, mode: "insensitive" } },
       { tag: { contains: search, mode: "insensitive" } },
     ];
   }
-  
+
   if (categoryId && categoryId !== "all") {
     where.categoryId = categoryId;
   }
-  
+
   if (status && status !== "all") {
     where.status = status as ItemStatus;
   }
 
-  return await db.item.findMany({
-    where,
-    include: { 
-      category: true, 
-      stock: true,
-      eventItems: {
-        include: { event: { include: { customer: true } } }
-      }
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [items, total] = await db.$transaction([
+    db.item.findMany({
+      where,
+      include: {
+        category: true,
+        stock: true,
+        eventItems: {
+          include: { event: { include: { customer: true } } }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.item.count({ where }),
+  ]);
+
+  return { items, total };
 }
 
 /**

@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { FieldError } from "@/components/ui/field-error";
 import {
   Select,
@@ -123,12 +124,11 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
           <Label htmlFor="password" title={initialData ? "Leave blank to keep current password" : ""}>
             <span className="text-foreground/80 font-semibold">{initialData ? "New Password (optional)" : "Password"}</span>
           </Label>
-          <Input 
-            id="password" 
-            type="password"
-            placeholder="••••••••" 
+          <PasswordInput
+            id="password"
+            placeholder="••••••••"
             className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70"
-            {...register("password")} 
+            {...register("password")}
           />
           <FieldError error={errors.password} />
         </div>

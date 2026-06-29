@@ -3,36 +3,36 @@ import { ReportsNav } from "@/components/reports/reports-nav";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { UtilizationTable } from "./client";
+import { StockHealthTable } from "../client";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage() {
+export default async function StockHealthPage() {
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
   }
 
-  const utilizedItemsRaw = await db.eventItem.groupBy({
+  const damagedReturns = await db.eventItem.groupBy({
     by: ["itemId"],
+    where: { returnCondition: { in: ["DAMAGED", "MISSING"] } },
     _sum: { quantity: true },
     orderBy: { _sum: { quantity: "desc" } },
     take: 10,
   });
 
-  const itemDetails = await db.item.findMany({
-    where: { id: { in: utilizedItemsRaw.map(u => u.itemId) } },
-    select: { id: true, name: true, tag: true, rentalPrice: true },
+  const damageDetails = await db.item.findMany({
+    where: { id: { in: damagedReturns.map(d => d.itemId) } },
+    select: { id: true, name: true, tag: true },
   });
 
-  const topUtilized = utilizedItemsRaw.map(u => {
-    const detail = itemDetails.find(i => i.id === u.itemId);
+  const stockHealth = damagedReturns.map(d => {
+    const detail = damageDetails.find(i => i.id === d.itemId);
     return {
-      id: u.itemId,
+      id: d.itemId,
       name: detail?.name || "Unknown Item",
       tag: detail?.tag || "—",
-      rentedQty: u._sum.quantity || 0,
-      potentialRevenue: (u._sum.quantity || 0) * Number(detail?.rentalPrice || 0),
+      issuesQty: d._sum.quantity || 0,
     };
   });
 
@@ -46,9 +46,9 @@ export default async function ReportsPage() {
       <ReportsNav />
 
       <div>
-        <h2 className="text-base font-semibold mb-1">Top Utilized Items</h2>
-        <p className="text-sm text-muted-foreground mb-4">Most frequently rented items by total quantity out.</p>
-        <UtilizationTable data={topUtilized} />
+        <h2 className="text-base font-semibold mb-1">Stock Health Warnings</h2>
+        <p className="text-sm text-muted-foreground mb-4">Items frequently returned damaged or missing.</p>
+        <StockHealthTable data={stockHealth} />
       </div>
     </div>
   );

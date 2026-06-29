@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getQuote } from "@/lib/actions/quotes";
-import { QuoteStatus } from "@/generated/prisma";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   Card,
   CardContent,
@@ -9,7 +9,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { QuoteLineEditor } from "./quote-line-editor";
@@ -33,24 +32,6 @@ const formatNGN = new Intl.NumberFormat("en-NG", {
   currency: "NGN",
 });
 
-function quoteStatusBadge(status: QuoteStatus) {
-  switch (status) {
-    case "DRAFT":
-      return <Badge variant="outline">Draft</Badge>;
-    case "SENT":
-      return (
-        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-          Sent
-        </Badge>
-      );
-    case "ACCEPTED":
-      return <Badge variant="default">Accepted</Badge>;
-    case "DECLINED":
-      return <Badge variant="destructive">Declined</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
-}
 
 export default async function QuoteDetailPage({
   params,
@@ -86,7 +67,7 @@ export default async function QuoteDetailPage({
             <span className="sr-only">Back to event</span>
           </Button>
           <div>
-            <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+            <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground">
               Quote
             </h1>
             <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -112,7 +93,7 @@ export default async function QuoteDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {quoteStatusBadge(quote.status)}
+          <StatusBadge status={quote.status} />
           <Button
             variant="outline"
             size="sm"
@@ -139,7 +120,7 @@ export default async function QuoteDetailPage({
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left column: Summary card */}
         <div className="flex flex-col gap-6 lg:col-span-1">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Summary</CardTitle>
             </CardHeader>
@@ -205,7 +186,7 @@ export default async function QuoteDetailPage({
                 <Separator />
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Amount Paid</dt>
-                  <dd className="font-medium text-emerald-600 dark:text-emerald-400">
+                  <dd className="font-medium text-success">
                     {formatNGN.format(Number(quote.amountPaid ?? 0))}
                   </dd>
                 </div>
@@ -222,11 +203,7 @@ export default async function QuoteDetailPage({
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Payment</dt>
                       <dd>
-                        {quote.paymentStatus === "reconciled" ? (
-                          <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">Reconciled</Badge>
-                        ) : (
-                          <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">Partial</Badge>
-                        )}
+                        <StatusBadge status={quote.paymentStatus} />
                       </dd>
                     </div>
                   </>
@@ -236,7 +213,7 @@ export default async function QuoteDetailPage({
           </Card>
 
           {quote.status !== "DECLINED" && quote.event.customer && Number(quote.total) - Number(quote.amountPaid ?? 0) > 0 && (
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ReceiptIcon className="size-4" />
@@ -259,7 +236,7 @@ export default async function QuoteDetailPage({
 
         {/* Right column: Line items editor */}
         <div className="lg:col-span-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Line Items</CardTitle>
               <CardDescription>

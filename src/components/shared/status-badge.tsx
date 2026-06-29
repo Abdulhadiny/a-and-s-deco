@@ -5,54 +5,83 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   // Payment Statuses
   outstanding: {
     label: "Outstanding",
-    className: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+    className: "bg-destructive/10 text-destructive border-destructive/20",
   },
   partial: {
     label: "Partial",
-    className: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    className: "bg-warning/10 text-warning border-warning/20",
   },
   reconciled: {
     label: "Reconciled",
-    className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+    className: "bg-success/10 text-success border-success/20",
   },
   // Event Statuses
   upcoming: {
     label: "Upcoming",
-    className: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    className: "bg-info/10 text-info border-info/20",
   },
   in_progress: {
     label: "In Progress",
-    className: "bg-primary/10 text-primary border-primary/20",
+    className: "bg-warning/10 text-warning border-warning/20",
   },
   completed: {
     label: "Completed",
-    className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+    className: "bg-success/10 text-success border-success/20",
   },
-  cancelled: { 
-    label: "Cancelled", 
-    className: "bg-accent text-muted-foreground border-border shadow-none grayscale" 
+  cancelled: {
+    label: "Cancelled",
+    className: "bg-muted text-muted-foreground border-border shadow-none",
   },
-  // Item Statuses
+  // Quote Statuses
+  draft: {
+    label: "Draft",
+    className: "bg-muted text-muted-foreground border-border",
+  },
+  sent: {
+    label: "Sent",
+    className: "bg-info/10 text-info border-info/20",
+  },
+  accepted: {
+    label: "Accepted",
+    className: "bg-success/10 text-success border-success/20",
+  },
+  declined: {
+    label: "Declined",
+    className: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+  // Item / allocation Statuses
   available: {
     label: "Available",
-    className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+    className: "bg-success/10 text-success border-success/20",
   },
   damaged: {
     label: "Damaged",
-    className: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+    className: "bg-destructive/10 text-destructive border-destructive/20",
   },
   retired: {
     label: "Retired",
-    className: "bg-accent text-muted-foreground border-border",
+    className: "bg-muted text-muted-foreground border-border",
+  },
+  returned: {
+    label: "Returned",
+    className: "bg-success/10 text-success border-success/20",
+  },
+  allocated: {
+    label: "Allocated",
+    className: "bg-info/10 text-info border-info/20",
+  },
+  out: {
+    label: "Out",
+    className: "bg-warning/10 text-warning border-warning/20",
   },
   // General
   active: {
     label: "Active",
-    className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+    className: "bg-success/10 text-success border-success/20",
   },
   inactive: {
     label: "Inactive",
-    className: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+    className: "bg-destructive/10 text-destructive border-destructive/20",
   },
 };
 
@@ -60,7 +89,7 @@ export function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
   const config = statusConfig[normalizedStatus] ?? {
     label: status,
-    className: "bg-accent text-muted-foreground border-border",
+    className: "bg-muted text-muted-foreground border-border",
   };
 
   return (
@@ -74,10 +103,10 @@ export function StatusBadge({ status }: { status: string }) {
       <span className="flex items-center gap-1.5">
         <span className={cn(
           "h-1 w-1 rounded-full",
-          config.className.includes("text-rose-500") ? "bg-rose-500" :
-          config.className.includes("text-emerald-500") ? "bg-emerald-500" :
-          config.className.includes("text-amber-500") ? "bg-amber-500" :
-          config.className.includes("text-blue-400") ? "bg-blue-400" : "bg-primary"
+          config.className.includes("text-destructive") ? "bg-destructive" :
+          config.className.includes("text-success") ? "bg-success" :
+          config.className.includes("text-warning") ? "bg-warning" :
+          config.className.includes("text-info") ? "bg-info" : "bg-muted-foreground"
         )} />
         {config.label}
       </span>

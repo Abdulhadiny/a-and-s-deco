@@ -28,6 +28,7 @@ import {
   SaveIcon,
   LockIcon,
 } from "lucide-react";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 const formatNGN = new Intl.NumberFormat("en-NG", {
   style: "currency",
@@ -64,6 +65,7 @@ export function QuoteLineEditor({
   const [notes, setNotes] = useState(initialNotes);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
   const total = Math.max(0, subtotal - discount);
@@ -115,6 +117,12 @@ export function QuoteLineEditor({
       return;
     }
 
+    setShowConfirm(true);
+  }
+
+  function handleConfirmedSave() {
+    const validLines = lines.filter((l) => l.description.trim());
+    setShowConfirm(false);
     startTransition(async () => {
       try {
         await updateQuoteLines(
@@ -392,6 +400,15 @@ export function QuoteLineEditor({
           {isPending ? "Saving..." : "Save Quote"}
         </Button>
       </div>
+      <ConfirmationDialog
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        onConfirm={handleConfirmedSave}
+        title="Save Quote"
+        description="Save changes to this quote?"
+        confirmLabel="Yes, Save Quote"
+        isLoading={isPending}
+      />
     </div>
   );
 }

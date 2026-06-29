@@ -169,28 +169,39 @@ async function main() {
 
   // ─── 8. STOCK INITIALIZATION (Safety Logic) ──────
   // If there are already items but no stock records, initialize them to MAIN warehouse
-  const items = await prisma.item.findMany();
-  let stockCount = 0;
-  for (const item of items) {
-    const existingStock = await prisma.inventoryStock.findFirst({
-      where: { itemId: item.id, storeId: "MAIN", locationId: "main-warehouse" }
-    });
-    
-    if (!existingStock) {
-      await prisma.inventoryStock.create({
-        data: {
-          itemId: item.id,
-          storeId: "MAIN",
-          locationId: "main-warehouse",
-          currentQty: 10, // Default for existing items if they weren't tracked before
-        }
+  const mainStore = await prisma.inventoryStore.findUnique({ where: { storeCode: "MAIN" } });
+  if (mainStore) {
+    const items = await prisma.item.findMany();
+    let stockCount = 0;
+    for (const item of items) {
+      const existingStock = await prisma.inventoryStock.findFirst({
+        where: { itemId: item.id, storeId: mainStore.id, locationId: "main-warehouse" }
       });
-      stockCount++;
+
+      if (!existingStock) {
+        await prisma.inventoryStock.create({
+          data: {
+            itemId: item.id,
+            storeId: mainStore.id,
+            locationId: "main-warehouse",
+            currentQty: 10,
+          }
+        });
+        stockCount++;
+      }
+    }
+    if (stockCount > 0) {
+      console.log(`+ Initialized stock for ${stockCount} existing items`);
     }
   }
-  if (stockCount > 0) {
-    console.log(`+ Initialized stock for ${stockCount} existing items`);
-  }
+
+  // ─── 9. SYSTEM EXPENSE CATEGORIES ────────────────────
+  await prisma.expenseCategory.upsert({
+    where: { name: "Damage & Loss" },
+    update: {},
+    create: { name: "Damage & Loss" },
+  });
+  console.log("+ System expense category: Damage & Loss");
 
   console.log("\nSeed complete.");
 }

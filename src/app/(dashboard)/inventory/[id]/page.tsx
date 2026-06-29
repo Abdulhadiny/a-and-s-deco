@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getItem, getCategories } from "@/lib/actions/inventory";
-import { ItemStatus } from "@/generated/prisma";
 import {
   Card,
   CardContent,
@@ -13,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ItemEditForm } from "@/components/inventory/item-edit-form";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   ArrowLeftIcon,
   ImageIcon,
@@ -29,19 +29,6 @@ const formatNGN = new Intl.NumberFormat("en-NG", {
   style: "currency",
   currency: "NGN",
 });
-
-function statusBadge(status: ItemStatus) {
-  switch (status) {
-    case "AVAILABLE":
-      return <Badge variant="default">Available</Badge>;
-    case "DAMAGED":
-      return <Badge variant="destructive">Damaged</Badge>;
-    case "RETIRED":
-      return <Badge variant="secondary">Retired</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
-}
 
 export default async function ItemDetailPage({
   params,
@@ -64,16 +51,12 @@ export default async function ItemDetailPage({
       {/* Back button and header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            render={<Link href="/inventory" />}
-          >
+          <Button variant="ghost" size="icon" render={<Link href="/inventory" />}>
             <ArrowLeftIcon />
             <span className="sr-only">Back to inventory</span>
           </Button>
           <div>
-            <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+            <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground">
               {item.name}
             </h1>
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -82,22 +65,18 @@ export default async function ItemDetailPage({
             </p>
           </div>
         </div>
-        {statusBadge(item.status)}
+        <StatusBadge status={item.status} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left column: Item info display */}
+        {/* Left column */}
         <div className="flex flex-col gap-6 lg:col-span-1">
           {/* Image */}
-          <Card>
+          <Card className="shadow-sm">
             <CardContent>
               <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-muted/50">
                 {item.imageUrl ? (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="size-full object-cover"
-                  />
+                  <img src={item.imageUrl} alt={item.name} className="size-full object-cover" />
                 ) : (
                   <ImageIcon className="size-16 text-muted-foreground/30" />
                 )}
@@ -106,7 +85,7 @@ export default async function ItemDetailPage({
           </Card>
 
           {/* Quick info */}
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Details</CardTitle>
             </CardHeader>
@@ -114,28 +93,22 @@ export default async function ItemDetailPage({
               <dl className="flex flex-col gap-3 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Category</dt>
-                  <dd className="font-medium">
-                    {item.category?.name ?? "Uncategorized"}
-                  </dd>
+                  <dd className="font-medium">{item.category?.name ?? "Uncategorized"}</dd>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Rental Price</dt>
-                  <dd className="font-medium">
-                    {formatNGN.format(Number(item.rentalPrice))}
-                  </dd>
+                  <dd className="font-medium tabular-nums">{formatNGN.format(Number(item.rentalPrice))}</dd>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Status</dt>
-                  <dd>{statusBadge(item.status)}</dd>
+                  <dd><StatusBadge status={item.status} /></dd>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Created</dt>
-                  <dd className="font-medium">
-                    {format(new Date(item.createdAt), "MMM d, yyyy")}
-                  </dd>
+                  <dd className="font-medium">{format(new Date(item.createdAt), "MMM d, yyyy")}</dd>
                 </div>
                 {item.description && (
                   <>
@@ -150,12 +123,8 @@ export default async function ItemDetailPage({
                   <>
                     <Separator />
                     <div className="flex flex-col gap-1">
-                      <dt className="text-muted-foreground">
-                        Condition Notes
-                      </dt>
-                      <dd className="text-foreground">
-                        {item.conditionNotes}
-                      </dd>
+                      <dt className="text-muted-foreground">Condition Notes</dt>
+                      <dd className="text-foreground">{item.conditionNotes}</dd>
                     </div>
                   </>
                 )}
@@ -164,15 +133,13 @@ export default async function ItemDetailPage({
           </Card>
         </div>
 
-        {/* Right column: Edit form + Event history */}
+        {/* Right column */}
         <div className="flex flex-col gap-6 lg:col-span-2">
           {/* Edit form */}
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Edit Item</CardTitle>
-              <CardDescription>
-                Update item details, status, and condition.
-              </CardDescription>
+              <CardDescription>Update item details, status, and condition.</CardDescription>
             </CardHeader>
             <CardContent>
               <ItemEditForm
@@ -187,80 +154,48 @@ export default async function ItemDetailPage({
                   status: item.status,
                   conditionNotes: item.conditionNotes,
                 }}
-                categories={categories.map((c: CategoryEntry) => ({
-                  id: c.id,
-                  name: c.name,
-                }))}
+                categories={categories.map((c: CategoryEntry) => ({ id: c.id, name: c.name }))}
               />
             </CardContent>
           </Card>
 
           {/* Recent event history */}
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDaysIcon className="size-4" />
-                Recent Event History
-              </CardTitle>
-              <CardDescription>
-                Last 10 events this item was assigned to
-              </CardDescription>
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-info/10">
+                  <CalendarDaysIcon className="size-4 text-info" />
+                </div>
+                <CardTitle>Recent Event History</CardTitle>
+              </div>
+              <CardDescription>Last 10 events this item was assigned to</CardDescription>
             </CardHeader>
             <CardContent>
               {item.eventItems.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  This item has not been assigned to any events yet.
-                </p>
+                <div className="flex flex-col items-center gap-2 py-6 text-center">
+                  <CalendarDaysIcon className="size-6 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">
+                    This item has not been assigned to any events yet.
+                  </p>
+                </div>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col divide-y divide-border">
                   {item.eventItems.map((ei: EventItemEntry) => (
                     <div
                       key={ei.id}
-                      className="flex flex-col gap-1 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between first:pt-0 last:pb-0"
                     >
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium">
-                          {ei.event.title}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {ei.event.customer.name}
-                        </span>
+                        <span className="text-sm font-medium">{ei.event.title}</span>
+                        <span className="text-xs text-muted-foreground">{ei.event.customer.name}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-muted-foreground">
-                          Allocated{" "}
-                          {format(
-                            new Date(ei.allocatedAt),
-                            "MMM d, yyyy",
-                          )}
+                          Allocated {format(new Date(ei.allocatedAt), "MMM d, yyyy")}
                         </span>
-                        {ei.returnedAt ? (
-                          <Badge variant="secondary">
-                            Returned{" "}
-                            {format(
-                              new Date(ei.returnedAt),
-                              "MMM d",
-                            )}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">Out</Badge>
-                        )}
-                        {ei.returnCondition && (
-                          <Badge
-                            variant={
-                              ei.returnCondition === "GOOD"
-                                ? "default"
-                                : ei.returnCondition === "DAMAGED"
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                          >
-                            {ei.returnCondition === "GOOD"
-                              ? "Good"
-                              : ei.returnCondition === "DAMAGED"
-                                ? "Damaged"
-                                : "Missing"}
-                          </Badge>
+                        <StatusBadge status={ei.returnedAt ? "returned" : "out"} />
+                        {ei.returnCondition && ei.returnCondition !== "GOOD" && (
+                          <StatusBadge status={ei.returnCondition.toLowerCase()} />
                         )}
                       </div>
                     </div>

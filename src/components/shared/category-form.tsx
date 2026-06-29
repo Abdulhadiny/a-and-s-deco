@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { FieldError } from "@/components/ui/field-error";
 import { categorySchema } from "@/lib/validators";
 import { createCategory, updateCategory } from "@/lib/actions/inventory";
+import { useFormConfirmation } from "@/lib/hooks/use-form-confirmation";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
@@ -26,6 +28,7 @@ interface CategoryFormProps {
 export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { showConfirm, setShowConfirm, pendingData, onPreSubmit, resetConfirmation } = useFormConfirmation<CategoryFormValues>();
 
   const {
     register,
@@ -45,14 +48,16 @@ export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
         },
   });
 
-  const onSubmit = async (data: CategoryFormValues) => {
+  const onConfirmedSubmit = async () => {
+    if (!pendingData) return;
     setIsLoading(true);
+    setShowConfirm(false);
     try {
       if (initialData) {
-        await updateCategory(initialData.id, data);
+        await updateCategory(initialData.id, pendingData);
         toast.success("Category updated");
       } else {
-        await createCategory(data);
+        await createCategory(pendingData);
         toast.success("Category created");
         reset();
       }
@@ -62,11 +67,13 @@ export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
       toast.error(error.message || "An error occurred");
     } finally {
       setIsLoading(false);
+      resetConfirmation();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <>
+    <form onSubmit={handleSubmit(onPreSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name" className="text-foreground/80 font-semibold text-xs uppercase">Category Name</Label>
         <Input 
@@ -94,5 +101,15 @@ export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
         {initialData ? "Update Category" : "Create Category"}
       </Button>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={onConfirmedSubmit}
+      title={initialData ? "Update Category" : "Create Category"}
+      description={initialData ? "Save changes to this category?" : "Create this new category?"}
+      confirmLabel={initialData ? "Yes, Update" : "Yes, Create"}
+      isLoading={isLoading}
+    />
+    </>
   );
 }

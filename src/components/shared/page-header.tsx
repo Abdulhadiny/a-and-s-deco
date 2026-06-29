@@ -32,7 +32,7 @@ export function PageHeader({ title, description, action, children }: PageHeaderP
   return (
     <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground leading-tight">
+        <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground leading-tight">
           {title}
         </h1>
         {description && (

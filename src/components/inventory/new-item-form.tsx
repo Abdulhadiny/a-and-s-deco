@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Loader2Icon, PlusIcon, PackagePlusIcon } from "lucide-react";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 interface Category {
   id: string;
@@ -84,6 +85,8 @@ function SingleItemForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [locationId, setLocationId] = useState("main-warehouse");
 
@@ -95,19 +98,29 @@ function SingleItemForm({
     formData.set("categoryId", categoryId);
     formData.set("locationId", locationId);
 
+    setPendingFormData(formData);
+    setShowConfirm(true);
+  }
+
+  function handleConfirmedSubmit() {
+    if (!pendingFormData) return;
+    setShowConfirm(false);
     startTransition(async () => {
       try {
-        await createItem(Object.fromEntries(formData.entries()));
+        await createItem(Object.fromEntries(pendingFormData.entries()));
         router.push("/inventory");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to create item.",
         );
+      } finally {
+        setPendingFormData(null);
       }
     });
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Category with New Category button */}
@@ -232,6 +245,16 @@ function SingleItemForm({
         </Button>
       </div>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={handleConfirmedSubmit}
+      title="Create Item"
+      description="Create this new inventory item?"
+      confirmLabel="Yes, Create Item"
+      isLoading={isPending}
+    />
+    </>
   );
 }
 
@@ -249,6 +272,8 @@ function BulkAddForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingItems, setPendingItems] = useState<Array<{ categoryId: string; name: string; tag: string; rentalPrice: number; initialQuantity: number; locationId: string }> | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [locationId, setLocationId] = useState("main-warehouse");
   const [baseName, setBaseName] = useState("");
@@ -292,19 +317,29 @@ function BulkAddForm({
       };
     });
 
+    setPendingItems(items);
+    setShowConfirm(true);
+  }
+
+  function handleConfirmedSubmit() {
+    if (!pendingItems) return;
+    setShowConfirm(false);
     startTransition(async () => {
       try {
-        await bulkCreateItems(items);
+        await bulkCreateItems(pendingItems);
         router.push("/inventory");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to create items.",
         );
+      } finally {
+        setPendingItems(null);
       }
     });
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Category */}
@@ -482,6 +517,16 @@ function BulkAddForm({
         </Button>
       </div>
     </form>
+    <ConfirmationDialog
+      open={showConfirm}
+      onOpenChange={setShowConfirm}
+      onConfirm={handleConfirmedSubmit}
+      title="Bulk Create Items"
+      description={`Create ${count} item${count !== 1 ? "s" : ""}? This cannot be undone.`}
+      confirmLabel={`Yes, Create ${count} Item${count !== 1 ? "s" : ""}`}
+      isLoading={isPending}
+    />
+    </>
   );
 }
 

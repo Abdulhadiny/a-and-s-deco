@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateEventStatus } from "@/lib/actions/events";
 import { EventStatus } from "@/generated/prisma";
@@ -11,6 +11,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "lucide-react";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 interface EventStatusActionsProps {
   eventId: string;
@@ -23,6 +24,8 @@ export function EventStatusActions({
 }: EventStatusActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
+  const showConfirm = pendingStatus !== null;
 
   function handleTransition(newStatus: EventStatus) {
     startTransition(async () => {
@@ -40,7 +43,7 @@ export function EventStatusActions({
       {currentStatus === "UPCOMING" && (
         <Button
           size="sm"
-          onClick={() => handleTransition("IN_PROGRESS")}
+          onClick={() => setPendingStatus("IN_PROGRESS")}
           disabled={isPending}
         >
           {isPending ? (
@@ -55,7 +58,7 @@ export function EventStatusActions({
       {currentStatus === "IN_PROGRESS" && (
         <Button
           size="sm"
-          onClick={() => handleTransition("COMPLETED")}
+          onClick={() => setPendingStatus("COMPLETED")}
           disabled={isPending}
         >
           {isPending ? (
@@ -71,7 +74,7 @@ export function EventStatusActions({
       <Button
         variant="destructive"
         size="sm"
-        onClick={() => handleTransition("CANCELLED")}
+        onClick={() => setPendingStatus("CANCELLED")}
         disabled={isPending}
       >
         {isPending ? (
@@ -81,6 +84,34 @@ export function EventStatusActions({
         )}
         Cancel Event
       </Button>
+      <ConfirmationDialog
+        open={showConfirm}
+        onOpenChange={(open) => { if (!open) setPendingStatus(null); }}
+        onConfirm={() => { if (pendingStatus) handleTransition(pendingStatus); setPendingStatus(null); }}
+        title={
+          pendingStatus === "CANCELLED"
+            ? "Cancel Event"
+            : pendingStatus === "COMPLETED"
+            ? "Complete Event"
+            : "Start Event"
+        }
+        description={
+          pendingStatus === "CANCELLED"
+            ? "This event will be cancelled. This action cannot be reversed."
+            : pendingStatus === "COMPLETED"
+            ? "Mark this event as completed?"
+            : "Start this event? Items will be marked as allocated."
+        }
+        confirmLabel={
+          pendingStatus === "CANCELLED"
+            ? "Yes, Cancel Event"
+            : pendingStatus === "COMPLETED"
+            ? "Yes, Complete Event"
+            : "Yes, Start Event"
+        }
+        variant={pendingStatus === "CANCELLED" ? "destructive" : "default"}
+        isLoading={isPending}
+      />
     </div>
   );
 }
