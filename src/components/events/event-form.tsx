@@ -353,6 +353,7 @@ function NewCustomerDialog({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    e.stopPropagation();
     setError(null);
 
     const formData = new FormData(e.currentTarget);
