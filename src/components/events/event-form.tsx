@@ -366,7 +366,7 @@ function NewCustomerDialog({
 
     startTransition(async () => {
       try {
-        const created = await createCustomer(Object.fromEntries(formData.entries()));
+        const created = await createCustomer(formData);
         onCreated({
           id: created.id,
           name: created.name,
