@@ -1,11 +1,15 @@
 import { config } from "dotenv";
 import { PrismaClient } from "../src/generated/prisma";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
 async function main() {
   config(); // load .env before anything uses process.env
-  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
+  const url = process.env.DATABASE_URL!;
+  const adapter = url.includes("neon.tech")
+    ? new PrismaNeon({ connectionString: url })
+    : new PrismaPg({ connectionString: url });
   const prisma = new PrismaClient({ adapter });
 
   console.log("Seeding as-deco database...\n");
