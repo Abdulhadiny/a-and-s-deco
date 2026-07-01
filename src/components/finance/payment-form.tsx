@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,10 +9,17 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldError } from "@/components/ui/field-error";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MoneyInput } from "@/components/ui/money-input";
 import { recordPayment } from "@/lib/actions/finance";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { useFormConfirmation } from "@/lib/hooks/use-form-confirmation";
@@ -46,6 +53,8 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
@@ -58,6 +67,12 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
       notes: "",
     },
   });
+
+  useEffect(() => {
+    if (defaultAmount !== undefined) {
+      setValue("amount", defaultAmount);
+    }
+  }, [defaultAmount, setValue]);
 
   const onConfirmedSubmit = async () => {
     if (!pendingData) return;
@@ -86,13 +101,13 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="amount" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Amount (₦)</Label>
-            <Input 
-              id="amount" 
-              type="number"
-              step="0.01"
-              placeholder="0.00" 
+            <MoneyInput
+              id="amount"
+              name="_amount"
+              defaultValue={watch("amount")}
+              onChange={(v) => setValue("amount", v)}
+              disabled={isLoading}
               className="bg-muted border-border text-foreground h-10 font-medium"
-              {...register("amount", { valueAsNumber: true })} 
             />
             <FieldError error={errors.amount} />
           </div>
@@ -111,17 +126,20 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="paymentMethod" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Payment Method</Label>
-            <select
-              id="paymentMethod"
-              className="flex h-10 w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              {...register("paymentMethod")}
-            >
-              <option value="BANK_TRANSFER">Bank Transfer</option>
-              <option value="CASH">Cash</option>
-              <option value="POS">POS / Card</option>
-              <option value="CHEQUE">Cheque</option>
-            </select>
+            <Label className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Payment Method</Label>
+            <Select value={watch("paymentMethod")} onValueChange={(v) => setValue("paymentMethod", v)}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {({ BANK_TRANSFER: "Bank Transfer", CASH: "Cash", POS: "POS / Card", CHEQUE: "Cheque" } as Record<string, string>)[watch("paymentMethod")]}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                <SelectItem value="CASH">Cash</SelectItem>
+                <SelectItem value="POS">POS / Card</SelectItem>
+                <SelectItem value="CHEQUE">Cheque</SelectItem>
+              </SelectContent>
+            </Select>
             <FieldError error={errors.paymentMethod} />
           </div>
 

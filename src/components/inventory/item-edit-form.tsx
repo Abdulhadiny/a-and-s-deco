@@ -10,9 +10,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2Icon, SaveIcon } from "lucide-react";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
-
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+import { ImageUpload } from "@/components/inventory/image-upload";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MoneyInput } from "@/components/ui/money-input";
+import { filterName, filterTag } from "@/lib/input-filters";
 
 interface Category {
   id: string;
@@ -50,8 +57,11 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
 
+  const [name, setName] = useState(item.name);
+  const [tag, setTag] = useState(item.tag);
   const [status, setStatus] = useState<ItemStatus>(item.status);
   const [categoryId, setCategoryId] = useState(item.categoryId);
+  const [imageUrl, setImageUrl] = useState<string | null>(item.imageUrl ?? null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,6 +72,7 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
     // Override select values that are managed by state
     formData.set("status", status);
     formData.set("categoryId", categoryId);
+    formData.set("imageUrl", imageUrl ?? "");
 
     setPendingFormData(formData);
     setShowConfirm(true);
@@ -90,121 +101,115 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
   return (
     <>
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {/* Name */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="edit-name">Name</Label>
-          <Input
-            id="edit-name"
-            name="name"
-            defaultValue={item.name}
-            required
-            disabled={isPending}
-          />
+      <div className="grid gap-6 lg:grid-cols-[1fr_11rem]">
+        {/* Left: all input fields */}
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                name="name"
+                value={name}
+                onChange={(e) => setName(filterName(e.target.value))}
+                required
+                disabled={isPending}
+              />
+            </div>
+
+            {/* Tag */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-tag">Tag</Label>
+              <Input
+                id="edit-tag"
+                name="tag"
+                value={tag}
+                onChange={(e) => setTag(filterTag(e.target.value))}
+                required
+                disabled={isPending}
+                className="uppercase"
+              />
+            </div>
+
+            {/* Category */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Category</Label>
+              <Select value={categoryId} onValueChange={setCategoryId} disabled={isPending}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category">
+                    {categories.find((c) => c.id === categoryId)?.name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Rental Price */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-price">Rental Price (NGN)</Label>
+              <MoneyInput
+                id="edit-price"
+                name="rentalPrice"
+                defaultValue={Number(item.rentalPrice)}
+                disabled={isPending}
+              />
+            </div>
+
+            {/* Status */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as ItemStatus)} disabled={isPending}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status">
+                    {STATUS_OPTIONS.find((o) => o.value === status)?.label}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-description">Description</Label>
+            <Textarea
+              id="edit-description"
+              name="description"
+              defaultValue={item.description ?? ""}
+              disabled={isPending}
+              placeholder="Optional description..."
+              rows={3}
+            />
+          </div>
+
+          {/* Condition Notes */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-condition">Condition Notes</Label>
+            <Textarea
+              id="edit-condition"
+              name="conditionNotes"
+              defaultValue={item.conditionNotes ?? ""}
+              disabled={isPending}
+              placeholder="Note any damage, wear, or special conditions..."
+              rows={3}
+            />
+          </div>
         </div>
 
-        {/* Tag */}
+        {/* Right: image */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="edit-tag">Tag</Label>
-          <Input
-            id="edit-tag"
-            name="tag"
-            defaultValue={item.tag}
-            required
-            disabled={isPending}
-            className="uppercase"
-          />
+          <Label>Image</Label>
+          <ImageUpload value={imageUrl} onChange={setImageUrl} disabled={isPending} previewClassName="w-full" />
         </div>
-
-        {/* Category */}
-        <div className="flex flex-col gap-1.5">
-          <Label>Category</Label>
-          <select
-            className={selectClass}
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            disabled={isPending}
-            aria-label="Category"
-          >
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Rental Price */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="edit-price">Rental Price (NGN)</Label>
-          <Input
-            id="edit-price"
-            name="rentalPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            defaultValue={Number(item.rentalPrice)}
-            required
-            disabled={isPending}
-          />
-        </div>
-
-        {/* Status */}
-        <div className="flex flex-col gap-1.5">
-          <Label>Status</Label>
-          <select
-            className={selectClass}
-            value={status}
-            onChange={(e) => setStatus(e.target.value as ItemStatus)}
-            disabled={isPending}
-            aria-label="Status"
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Image URL */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="edit-image">Image URL</Label>
-          <Input
-            id="edit-image"
-            name="imageUrl"
-            type="url"
-            defaultValue={item.imageUrl ?? ""}
-            disabled={isPending}
-            placeholder="https://..."
-          />
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="edit-description">Description</Label>
-        <Textarea
-          id="edit-description"
-          name="description"
-          defaultValue={item.description ?? ""}
-          disabled={isPending}
-          placeholder="Optional description..."
-          rows={3}
-        />
-      </div>
-
-      {/* Condition Notes */}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="edit-condition">Condition Notes</Label>
-        <Textarea
-          id="edit-condition"
-          name="conditionNotes"
-          defaultValue={item.conditionNotes ?? ""}
-          disabled={isPending}
-          placeholder="Note any damage, wear, or special conditions..."
-          rows={3}
-        />
       </div>
 
       {/* Error / Success feedback */}

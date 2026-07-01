@@ -40,6 +40,13 @@ async function main() {
   // ─── 3. ROLES ────────────────────────────────────
   const rolesData = [
     {
+      id: "super-admin-role",
+      name: "super_admin",
+      displayName: "Super Administrator",
+      description: "Hidden system-level access with full privileges",
+      isSystem: true,
+    },
+    {
       id: "admin-role",
       name: "admin",
       displayName: "Administrator",
@@ -91,7 +98,7 @@ async function main() {
   console.log("+ Permissions:", permissionsData.length);
 
   // ─── 5. ROLE-PERMISSION MAPPINGS ─────────────────
-  const adminPerms = permissionsData.map(p => `${p.module}:${p.action}`);
+  const allPerms = permissionsData.map(p => `${p.module}:${p.action}`);
   const staffPerms = [
     "inventory:read",
     "events:read", "events:manage",
@@ -99,7 +106,8 @@ async function main() {
   ];
 
   const rolePermissionMap: Record<string, string[]> = {
-    admin: adminPerms,
+    super_admin: allPerms,
+    admin: allPerms,
     staff: staffPerms,
   };
 
@@ -128,7 +136,7 @@ async function main() {
   }
   console.log("+ Role-Permission mappings applied");
 
-  // ─── 6. ADMIN USER ───────────────────────────────
+  // ─── 6. USERS ────────────────────────────────────
   const passwordHash = await bcrypt.hash("admin123", 12);
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@asdeco.com" },
@@ -145,6 +153,23 @@ async function main() {
     },
   });
   console.log("+ Admin user:", adminUser.email);
+
+  const superAdminHash = await bcrypt.hash("superadmin123", 12);
+  const superAdminUser = await prisma.user.upsert({
+    where: { email: "superadmin@asdeco.com" },
+    update: {
+      roleId: "super-admin-role",
+      locationId: "main-warehouse",
+    },
+    create: {
+      name: "Super Admin",
+      email: "superadmin@asdeco.com",
+      passwordHash: superAdminHash,
+      roleId: "super-admin-role",
+      locationId: "main-warehouse",
+    },
+  });
+  console.log("+ Super Admin user:", superAdminUser.email);
 
   // ─── 7. SYSTEM CONFIGS ───────────────────────────
   const configsData = [

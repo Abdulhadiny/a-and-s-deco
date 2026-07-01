@@ -98,7 +98,7 @@ export async function checkPermission(permission: string) {
   const role = session.user.role;
   const permissions = session.user.permissions || [];
 
-  if (role === "admin") {
+  if (role === "admin" || role === "super_admin") {
     return session;
   }
 

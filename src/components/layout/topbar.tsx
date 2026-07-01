@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSidebar } from "@/components/providers/sidebar-provider";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 export function Topbar() {
   const { data: session } = useSession();
@@ -148,6 +149,8 @@ export function Topbar() {
 
       <div className="flex items-center gap-2 md:gap-4">
         <div className="h-6 w-px bg-border hidden md:block" />
+
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger render={

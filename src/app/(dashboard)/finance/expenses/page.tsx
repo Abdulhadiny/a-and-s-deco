@@ -31,7 +31,7 @@ export default async function ExpensesPage({
     db.$transaction([
       db.expense.findMany({
         orderBy: { expenseDate: "desc" },
-        include: { category: true, location: true },
+        include: { category: true },
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
       }),

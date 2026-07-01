@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { SidebarProvider } from "@/components/providers/sidebar-provider";
+import { OneSignalInit } from "@/components/notifications/onesignal-init";
 
 export default async function DashboardLayout({
   children,
@@ -17,6 +18,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
+      <OneSignalInit />
       <div className="flex h-screen overflow-hidden bg-background text-foreground selection:bg-primary/20 selection:text-primary">
         <div className="hidden md:block print:hidden shrink-0">
           <Sidebar />

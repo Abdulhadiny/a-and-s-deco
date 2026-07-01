@@ -15,6 +15,7 @@ export default async function LocationsPage() {
       <PageHeader
         title="Locations"
         description="Manage warehouses, offices, and event sites"
+        backHref="/settings"
         action={{
           label: "Add Location",
           icon: Plus,

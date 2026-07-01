@@ -43,6 +43,7 @@ export default async function ConfigurationPage() {
       <PageHeader
         title="System Configuration"
         description="Global business settings and financial defaults"
+        backHref="/settings"
       />
 
       <form action={handleSave} className="space-y-6">

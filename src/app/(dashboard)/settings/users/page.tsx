@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
   const users = await db.user.findMany({
+    where: { role: { name: { not: "super_admin" } } },
     include: {
       role: true,
       location: true,
@@ -19,6 +20,7 @@ export default async function UsersPage() {
       <PageHeader
         title="User Management"
         description="Manage system access and permissions"
+        backHref="/settings"
         action={{
           label: "Add User",
           icon: Plus,

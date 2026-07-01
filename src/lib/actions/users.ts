@@ -97,8 +97,16 @@ export async function updateUser(id: string, data: unknown) {
 
   const validated = userSchema.parse(data);
 
-  const oldUser = await db.user.findUnique({ where: { id } });
+  const oldUser = await db.user.findUnique({ where: { id }, include: { role: true } });
   if (!oldUser) throw new Error("User not found");
+
+  if (oldUser.role?.name === "super_admin" && session.user.role !== "super_admin") {
+    throw new Error("Forbidden");
+  }
+
+  if (id === session.user.id && validated.isActive === false) {
+    throw new Error("You cannot deactivate your own account");
+  }
 
   const updateData: Prisma.UserUncheckedUpdateInput = {
     email: validated.email,

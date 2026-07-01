@@ -16,6 +16,7 @@ import {
   Wallet,
   PieChart,
   Settings,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -35,6 +36,7 @@ interface NavItem {
   href: string;
   icon: any;
   permission?: string;
+  superAdminOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -46,6 +48,7 @@ const navItems: NavItem[] = [
   { title: "Finance", href: "/finance", icon: Wallet, permission: "finance:read" },
   { title: "Reports", href: "/reports", icon: PieChart, permission: "finance:read" },
   { title: "Settings", href: "/settings", icon: Settings, permission: "settings:manage" },
+  { title: "Audit Log", href: "/settings/audit-log", icon: ShieldCheck, superAdminOnly: true },
 ];
 
 function NavContent({
@@ -59,12 +62,19 @@ function NavContent({
 }) {
   const pathname = usePathname();
 
+  const activeHref = items.reduce<string | null>((best, item) => {
+    const matches = item.href === "/"
+      ? pathname === "/"
+      : pathname === item.href || pathname.startsWith(item.href + "/");
+    if (!matches) return best;
+    if (!best || item.href.length > best.length) return item.href;
+    return best;
+  }, null);
+
   return (
     <div className={cn("flex flex-col gap-0.5", collapsed ? "py-6" : "py-4")}>
       {items.map((item) => {
-        const isActive = item.href === "/"
-          ? pathname === "/"
-          : pathname === item.href || pathname.startsWith(item.href + "/");
+        const isActive = item.href === activeHref;
 
         const link = (
           <Link
@@ -136,9 +146,12 @@ export function Sidebar() {
   const permissions = user?.permissions || [];
   const role = user?.role;
 
+  const isSuperAdmin = role === "super_admin";
+
   const filteredItems = navItems.filter((item) => {
     if (isLoading) return true;
-    if (!item.permission || role === "admin") return true;
+    if (item.superAdminOnly) return isSuperAdmin;
+    if (!item.permission || role === "admin" || role === "super_admin") return true;
     return permissions.includes(item.permission);
   });
 

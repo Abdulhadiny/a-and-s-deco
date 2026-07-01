@@ -81,7 +81,8 @@ export const userSchema = z.object({
     .string()
     .min(6, "Password must be at least 6 characters")
     .max(128, "Password is too long")
-    .optional(),
+    .optional()
+    .or(z.literal("")),
   roleId: z.string().min(1, "Select a role"),
   locationId: z.string().nullable().optional(),
   isActive: z.boolean(),

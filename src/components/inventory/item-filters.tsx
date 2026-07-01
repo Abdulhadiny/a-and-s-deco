@@ -5,6 +5,13 @@ import { useCallback, useRef, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { SearchIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Category {
   id: string;
@@ -17,9 +24,6 @@ interface ItemFiltersProps {
   currentCategory?: string;
   currentStatus?: string;
 }
-
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-44";
 
 export function ItemFilters({
   categories,
@@ -80,32 +84,42 @@ export function ItemFilters({
       </div>
 
       {/* Category filter */}
-      <select
-        className={selectClass}
-        value={currentCategory ?? ""}
-        onChange={(e) => updateParams("category", e.target.value || null)}
-        aria-label="Filter by category"
+      <Select
+        value={currentCategory || "__all__"}
+        onValueChange={(v) => updateParams("category", v === "__all__" ? null : v)}
       >
-        <option value="">All Categories</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="sm:w-44">
+          <SelectValue>
+            {currentCategory ? categories.find((c) => c.id === currentCategory)?.name : "All Categories"}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">All Categories</SelectItem>
+          {categories.map((c) => (
+            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       {/* Status filter */}
-      <select
-        className={`${selectClass} sm:w-40`}
-        value={currentStatus ?? ""}
-        onChange={(e) => updateParams("status", e.target.value || null)}
-        aria-label="Filter by status"
+      <Select
+        value={currentStatus || "__all__"}
+        onValueChange={(v) => updateParams("status", v === "__all__" ? null : v)}
       >
-        <option value="">All Statuses</option>
-        <option value="AVAILABLE">Available</option>
-        <option value="DAMAGED">Damaged</option>
-        <option value="RETIRED">Retired</option>
-      </select>
+        <SelectTrigger className="sm:w-40">
+          <SelectValue>
+            {currentStatus
+              ? ({ AVAILABLE: "Available", DAMAGED: "Damaged", RETIRED: "Retired" } as Record<string, string>)[currentStatus]
+              : "All Statuses"}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">All Statuses</SelectItem>
+          <SelectItem value="AVAILABLE">Available</SelectItem>
+          <SelectItem value="DAMAGED">Damaged</SelectItem>
+          <SelectItem value="RETIRED">Retired</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Clear filters */}
       {hasFilters && (

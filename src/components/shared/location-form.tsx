@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldError } from "@/components/ui/field-error";
+import { filterName } from "@/lib/input-filters";
 import { locationSchema } from "@/lib/validators";
 import { createLocation, updateLocation } from "@/lib/actions/settings";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -70,16 +71,19 @@ export function LocationForm({ initialData }: LocationFormProps) {
     }
   };
 
+  const { onChange: onNameChange, ...nameReg } = register("name");
+
   return (
     <>
       <form onSubmit={handleSubmit(onPreSubmit)} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name" className="text-foreground/80 font-semibold">Location Name</Label>
-          <Input 
-            id="name" 
-            placeholder="e.g. Main Warehouse" 
+          <Input
+            id="name"
+            placeholder="e.g. Main Warehouse"
             className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70 focus:border-primary/50"
-            {...register("name")} 
+            {...nameReg}
+            onChange={(e) => { e.target.value = filterName(e.target.value); return onNameChange(e); }}
           />
           <FieldError error={errors.name} />
         </div>

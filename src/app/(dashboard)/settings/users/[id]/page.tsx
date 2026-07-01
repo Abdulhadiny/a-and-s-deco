@@ -12,12 +12,12 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
   const { id } = await params;
   
   const [user, roles, locations] = await Promise.all([
-    db.user.findUnique({ where: { id } }),
-    db.role.findMany({ orderBy: { name: "asc" } }),
+    db.user.findUnique({ where: { id }, include: { role: true } }),
+    db.role.findMany({ where: { name: { not: "super_admin" } }, orderBy: { name: "asc" } }),
     db.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
   ]);
 
-  if (!user) {
+  if (!user || user.role?.name === "super_admin") {
     notFound();
   }
 

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/ui/field-error";
+import { filterName } from "@/lib/input-filters";
 import { expenseCategorySchema } from "@/lib/validators";
 import { createExpenseCategory, updateExpenseCategory } from "@/lib/actions/finance";
 import { useFormConfirmation } from "@/lib/hooks/use-form-confirmation";
@@ -75,16 +76,19 @@ export function ExpenseCategoryForm({ initialData, onSuccess }: ExpenseCategoryF
     }
   };
 
+  const { onChange: onNameChange, ...nameReg } = register("name");
+
   return (
     <>
     <form onSubmit={handleSubmit(onPreSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name" className="text-foreground/80 font-semibold text-xs uppercase">Category Name</Label>
-        <Input 
-          id="name" 
-          placeholder="e.g. Fuel, Transport, Labor" 
+        <Input
+          id="name"
+          placeholder="e.g. Fuel, Transport, Labor"
           className="bg-muted border-border text-foreground placeholder:text-muted-foreground/70 h-9"
-          {...register("name")} 
+          {...nameReg}
+          onChange={(e) => { e.target.value = filterName(e.target.value); return onNameChange(e); }}
         />
         <FieldError error={errors.name} />
       </div>

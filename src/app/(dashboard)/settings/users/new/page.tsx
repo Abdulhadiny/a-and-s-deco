@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default async function NewUserPage() {
   const [roles, locations] = await Promise.all([
-    db.role.findMany({ orderBy: { name: "asc" } }),
+    db.role.findMany({ where: { name: { not: "super_admin" } }, orderBy: { name: "asc" } }),
     db.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
   ]);
 

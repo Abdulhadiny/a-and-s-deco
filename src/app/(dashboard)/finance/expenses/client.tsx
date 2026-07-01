@@ -22,11 +22,6 @@ export function ExpensesTable({ expenses }: { expenses: any[] }) {
       cell: (row) => <span className="text-muted-foreground">{row.description || "—"}</span>,
     },
     {
-      key: "location",
-      header: "Location",
-      cell: (row) => <span className="text-muted-foreground">{row.location?.name || "Global"}</span>,
-    },
-    {
       key: "amount",
       header: "Amount",
       cell: (row) => <span className="font-semibold text-rose-500">{formatCurrency(row.amount)}</span>,

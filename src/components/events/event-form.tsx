@@ -25,6 +25,14 @@ import {
   UserPlusIcon,
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { filterName } from "@/lib/input-filters";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Customer {
   id: string;
@@ -49,9 +57,6 @@ interface EventFormProps {
   event?: EventData;
   mode?: "create" | "edit";
 }
-
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const EVENT_TYPES = [
   { value: "WEDDING", label: "Wedding" },
@@ -150,23 +155,20 @@ export function EventForm({
             </p>
           ) : (
             <div className="flex gap-2">
-              <select
-                className={selectClass}
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                required
-                disabled={isPending}
-                aria-label="Customer"
-              >
-                <option value="" disabled>
-                  Select customer
-                </option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}{c.phone ? ` (${c.phone})` : ""}
-                  </option>
-                ))}
-              </select>
+              <Select value={customerId} onValueChange={setCustomerId} disabled={isPending}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select customer">
+                    {customers.find((c) => c.id === customerId)?.name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}{c.phone ? ` (${c.phone})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <NewCustomerDialog
                 onCreated={(c) => {
                   setCustomers(
@@ -189,23 +191,18 @@ export function EventForm({
               {EVENT_TYPES.find((t) => t.value === eventType)?.label ?? eventType}
             </p>
           ) : (
-            <select
-              className={selectClass}
-              value={eventType}
-              onChange={(e) => setEventType(e.target.value)}
-              required
-              disabled={isPending}
-              aria-label="Event type"
-            >
-              <option value="" disabled>
-                Select type
-              </option>
-              {EVENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+            <Select value={eventType} onValueChange={setEventType} disabled={isPending}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select type">
+                  {EVENT_TYPES.find((t) => t.value === eventType)?.label}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {EVENT_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
 
@@ -218,7 +215,7 @@ export function EventForm({
             required
             disabled={isPending}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => setTitle(filterName(e.target.value))}
             placeholder="e.g. Amina & Ibrahim Wedding"
           />
         </div>
@@ -277,7 +274,7 @@ export function EventForm({
             name="venue"
             disabled={isPending}
             value={venue}
-            onChange={(e) => setVenue(e.target.value)}
+            onChange={(e) => setVenue(filterName(e.target.value))}
             placeholder="e.g. Grand Ballroom, Tahir Guest Palace"
           />
         </div>

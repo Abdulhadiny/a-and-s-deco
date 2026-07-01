@@ -100,7 +100,7 @@ export function ProfileForm({ initialName, email }: ProfileFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="newPassword" className="text-foreground/80 font-semibold">New Password <span className="font-normal text-muted-foreground">(optional)</span></Label>
+          <Label htmlFor="newPassword" className="text-foreground/80 font-semibold">New Password</Label>
           <PasswordInput
             id="newPassword"
             placeholder="••••••••"

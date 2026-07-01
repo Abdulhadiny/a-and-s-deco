@@ -14,6 +14,13 @@ import {
   CircleHelpIcon,
   CheckCheckIcon,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EventItemEntry {
   id: string;
@@ -34,9 +41,6 @@ interface ReturnItemsProps {
   eventItems: EventItemEntry[];
   locations: { id: string; name: string }[];
 }
-
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 type ReturnCondition = "GOOD" | "DAMAGED" | "MISSING";
 
@@ -59,18 +63,18 @@ export function ReturnItems({ eventId, eventItems, locations }: ReturnItemsProps
       {unreturned.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs">Return to Warehouse</Label>
-          <select
-            className={selectClass}
-            value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            aria-label="Return location"
-          >
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
+          <Select value={locationId} onValueChange={setLocationId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select warehouse">
+                {locations.find((l) => l.id === locationId)?.name}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map((loc) => (
+                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 

@@ -23,6 +23,13 @@ import {
   PackagePlusIcon,
   SearchIcon,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AvailableItem {
   id: string;
@@ -40,9 +47,6 @@ interface AllocateItemsDialogProps {
   /** IDs already allocated to this event, to skip in the list */
   alreadyAllocatedIds?: string[];
 }
-
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const formatNGN = new Intl.NumberFormat("en-NG", {
   style: "currency",
@@ -194,19 +198,18 @@ export function AllocateItemsDialog({
         <div className="flex flex-col gap-3 border-b px-4 pb-4">
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs">Warehouse / Location</Label>
-            <select
-              className={selectClass}
-              value={locationId}
-              onChange={(e) => handleLocationChange(e.target.value)}
-              disabled={isPending || isLoadingItems}
-              aria-label="Warehouse location"
-            >
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
-            </select>
+            <Select value={locationId} onValueChange={handleLocationChange} disabled={isPending || isLoadingItems}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select warehouse">
+                  {locations.find((l) => l.id === locationId)?.name}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map((loc) => (
+                  <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="relative">
             <SearchIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -219,19 +222,19 @@ export function AllocateItemsDialog({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs">Filter by category</Label>
-            <select
-              className={selectClass}
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              aria-label="Filter by category"
-            >
-              <option value="__all__">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All Categories">
+                  {categoryFilter === "__all__" ? "All Categories" : categories.find((c) => c.id === categoryFilter)?.name}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">

@@ -24,6 +24,16 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Loader2Icon, PlusIcon, PackagePlusIcon } from "lucide-react";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { ImageUpload } from "@/components/inventory/image-upload";
+import { MoneyInput } from "@/components/ui/money-input";
+import { filterName, filterTag } from "@/lib/input-filters";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Category {
   id: string;
@@ -39,9 +49,6 @@ interface NewItemFormProps {
   categories: Category[];
   locations?: Location[];
 }
-
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function NewItemForm({ categories: initialCategories, locations = [] }: NewItemFormProps) {
   const [categories, setCategories] = useState(initialCategories);
@@ -89,6 +96,9 @@ function SingleItemForm({
   const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [locationId, setLocationId] = useState("main-warehouse");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [tag, setTag] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -97,6 +107,7 @@ function SingleItemForm({
     const formData = new FormData(e.currentTarget);
     formData.set("categoryId", categoryId);
     formData.set("locationId", locationId);
+    formData.set("imageUrl", imageUrl ?? "");
 
     setPendingFormData(formData);
     setShowConfirm(true);
@@ -122,111 +133,116 @@ function SingleItemForm({
   return (
     <>
     <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {/* Category with New Category button */}
-        <div className="flex flex-col gap-1.5">
-          <Label>Category</Label>
-          <div className="flex gap-2">
-            <select
-              className={selectClass}
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              required
+      <div className="grid gap-6 lg:grid-cols-[1fr_11rem]">
+        {/* Left: all input fields */}
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Category with New Category button */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Category</Label>
+              <div className="flex gap-2">
+                <Select value={categoryId} onValueChange={setCategoryId} disabled={isPending}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category">
+                      {categories.find((c) => c.id === categoryId)?.name}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <NewCategoryDialog
+                  onCreated={(cat) => {
+                    onCategoriesChange([...categories, cat].sort((a, b) =>
+                      a.name.localeCompare(b.name),
+                    ));
+                    setCategoryId(cat.id);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Initial Stock Location</Label>
+              <Select value={locationId} onValueChange={setLocationId} disabled={isPending}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select location">
+                    {locations.find((l) => l.id === locationId)?.name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="single-name">Name</Label>
+              <Input
+                id="single-name"
+                name="name"
+                value={name}
+                onChange={(e) => setName(filterName(e.target.value))}
+                required
+                disabled={isPending}
+                placeholder="e.g. Gold Chiavari Chair"
+              />
+            </div>
+
+            {/* Tag */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="single-tag">Tag</Label>
+              <Input
+                id="single-tag"
+                name="tag"
+                value={tag}
+                onChange={(e) => setTag(filterTag(e.target.value))}
+                required
+                disabled={isPending}
+                placeholder="e.g. CHAN-001"
+                className="uppercase"
+              />
+            </div>
+
+            {/* Rental Price */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="single-price">Rental Price (NGN)</Label>
+              <MoneyInput
+                id="single-price"
+                name="rentalPrice"
+                disabled={isPending}
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="single-desc">Description</Label>
+            <Textarea
+              id="single-desc"
+              name="description"
               disabled={isPending}
-            >
-              <option value="" disabled>
-                Select category
-              </option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <NewCategoryDialog
-              onCreated={(cat) => {
-                onCategoriesChange([...categories, cat].sort((a, b) =>
-                  a.name.localeCompare(b.name),
-                ));
-                setCategoryId(cat.id);
-              }}
+              placeholder="Optional description..."
+              rows={3}
             />
           </div>
         </div>
 
-        {/* Location */}
+        {/* Right: image */}
         <div className="flex flex-col gap-1.5">
-          <Label>Initial Stock Location</Label>
-          <select
-            className={selectClass}
-            value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            disabled={isPending}
-            aria-label="Location"
-          >
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Name */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="single-name">Name</Label>
-          <Input
-            id="single-name"
-            name="name"
-            required
-            disabled={isPending}
-            placeholder="e.g. Gold Chiavari Chair"
-          />
-        </div>
-
-        {/* Tag */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="single-tag">Tag</Label>
-          <Input
-            id="single-tag"
-            name="tag"
-            required
-            disabled={isPending}
-            placeholder="e.g. CHAN-001"
-            className="uppercase"
-          />
-        </div>
-
-        {/* Initial quantity is always 1 for single items (each has a unique tag) */}
-        <input type="hidden" name="initialQuantity" value="1" />
-
-        {/* Rental Price */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="single-price">Rental Price (NGN)</Label>
-          <Input
-            id="single-price"
-            name="rentalPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            disabled={isPending}
-            placeholder="0.00"
-          />
+          <Label>Image</Label>
+          <ImageUpload value={imageUrl} onChange={setImageUrl} disabled={isPending} previewClassName="w-full" />
         </div>
       </div>
 
-      {/* Description */}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="single-desc">Description</Label>
-        <Textarea
-          id="single-desc"
-          name="description"
-          disabled={isPending}
-          placeholder="Optional description..."
-          rows={3}
-        />
-      </div>
+      <input type="hidden" name="initialQuantity" value="1" />
 
       {error && (
         <p className="text-sm text-destructive" role="alert">
@@ -280,7 +296,7 @@ function BulkAddForm({
   const [tagPrefix, setTagPrefix] = useState("");
   const [startNumber, setStartNumber] = useState(1);
   const [count, setCount] = useState(1);
-  const [rentalPrice, setRentalPrice] = useState("");
+  const [rentalPrice, setRentalPrice] = useState(0);
 
   // Preview the tags that will be generated
   const previewTags = Array.from({ length: Math.min(count, 10) }, (_, i) => {
@@ -311,7 +327,7 @@ function BulkAddForm({
         categoryId,
         name: `${baseName.trim()} ${num}`,
         tag: `${tagPrefix.trim().toUpperCase()}-${String(num).padStart(3, "0")}`,
-        rentalPrice: parseFloat(rentalPrice),
+        rentalPrice,
         initialQuantity: 1,
         locationId,
       };
@@ -346,22 +362,18 @@ function BulkAddForm({
         <div className="flex flex-col gap-1.5">
           <Label>Category</Label>
           <div className="flex gap-2">
-            <select
-              className={selectClass}
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              required
-              disabled={isPending}
-            >
-              <option value="" disabled>
-                Select category
-              </option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <Select value={categoryId} onValueChange={setCategoryId} disabled={isPending}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select category">
+                  {categories.find((c) => c.id === categoryId)?.name}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <NewCategoryDialog
               onCreated={(cat) => {
                 onCategoriesChange([...categories, cat].sort((a, b) =>
@@ -376,19 +388,18 @@ function BulkAddForm({
         {/* Location */}
         <div className="flex flex-col gap-1.5">
           <Label>Initial Stock Location</Label>
-          <select
-            className={selectClass}
-            value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            disabled={isPending}
-            aria-label="Location"
-          >
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
+          <Select value={locationId} onValueChange={setLocationId} disabled={isPending}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select location">
+                {locations.find((l) => l.id === locationId)?.name}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map((loc) => (
+                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Base Name */}
@@ -397,7 +408,7 @@ function BulkAddForm({
           <Input
             id="bulk-name"
             value={baseName}
-            onChange={(e) => setBaseName(e.target.value)}
+            onChange={(e) => setBaseName(filterName(e.target.value))}
             required
             disabled={isPending}
             placeholder="e.g. Gold Chiavari Chair"
@@ -414,7 +425,7 @@ function BulkAddForm({
           <Input
             id="bulk-prefix"
             value={tagPrefix}
-            onChange={(e) => setTagPrefix(e.target.value)}
+            onChange={(e) => setTagPrefix(filterTag(e.target.value))}
             required
             disabled={isPending}
             placeholder="e.g. CHAN"
@@ -457,16 +468,12 @@ function BulkAddForm({
         {/* Rental Price */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="bulk-price">Rental Price (NGN)</Label>
-          <Input
+          <MoneyInput
             id="bulk-price"
-            type="number"
-            min="0"
-            step="0.01"
-            value={rentalPrice}
-            onChange={(e) => setRentalPrice(e.target.value)}
-            required
+            name="bulk-rental-price"
+            onChange={setRentalPrice}
             disabled={isPending}
-            placeholder="0.00"
+            placeholder="0"
           />
           <p className="text-xs text-muted-foreground">
             Same price applied to every item in this batch

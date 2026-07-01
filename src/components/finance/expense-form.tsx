@@ -5,9 +5,16 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MoneyInput } from "@/components/ui/money-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { recordExpense } from "@/lib/actions/finance";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
@@ -33,15 +40,18 @@ export function ExpenseForm({
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<{ categoryId: string; locationId?: string; amount: number; expenseDate: string; description?: string } | null>(null);
+  const [categoryId, setCategoryId] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const [amount, setAmount] = useState(0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
     const data = {
-      categoryId: formData.get("categoryId") as string,
-      locationId: (formData.get("locationId") as string) || undefined,
-      amount: Number(formData.get("amount")),
+      categoryId,
+      locationId: locationId || undefined,
+      amount,
       expenseDate: formData.get("expenseDate") as string,
       description: (formData.get("description") as string) || undefined,
     };
@@ -63,6 +73,9 @@ export function ExpenseForm({
       await recordExpense(pendingData);
       toast.success("Expense recorded successfully");
       formRef.current?.reset();
+      setCategoryId("");
+      setLocationId("");
+      setAmount(0);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to record expense");
@@ -72,41 +85,54 @@ export function ExpenseForm({
     }
   }
 
-  const selectClass = "flex h-10 w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
-
   return (
     <>
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 pt-4">
       <div className="space-y-2">
-        <Label htmlFor="categoryId" className="text-foreground/80">Category</Label>
-        <select id="categoryId" name="categoryId" className={selectClass} required>
-          <option value="">Select Category</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        <Label className="text-foreground/80">Category</Label>
+        <Select value={categoryId} onValueChange={setCategoryId}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select Category">
+              {categories.find((c) => c.id === categoryId)?.name}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="locationId" className="text-foreground/80">Location (Optional)</Label>
-        <select id="locationId" name="locationId" className={selectClass}>
-          <option value="">Global / N/A</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>{l.name}</option>
-          ))}
-        </select>
+        <Label className="text-foreground/80">Location (Optional)</Label>
+        <Select
+          value={locationId || "__none__"}
+          onValueChange={(v) => setLocationId(v === "__none__" ? "" : v)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Global / N/A">
+              {locationId ? locations.find((l) => l.id === locationId)?.name : "Global / N/A"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">Global / N/A</SelectItem>
+            {locations.map((l) => (
+              <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="amount" className="text-foreground/80">Amount (₦)</Label>
-          <Input
+          <MoneyInput
             id="amount"
             name="amount"
-            type="number"
-            step="0.01"
-            min="0.01"
-            required
+            defaultValue={0}
+            onChange={setAmount}
+            disabled={isLoading}
             className="bg-muted border-border text-foreground h-10"
           />
         </div>

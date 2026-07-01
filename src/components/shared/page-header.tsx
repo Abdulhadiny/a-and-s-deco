@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
   title: string;
   description?: string;
+  backHref?: string;
   action?: {
     label: string;
     icon?: LucideIcon;
@@ -15,7 +16,7 @@ interface PageHeaderProps {
   children?: React.ReactNode;
 }
 
-export function PageHeader({ title, description, action, children }: PageHeaderProps) {
+export function PageHeader({ title, description, backHref, action, children }: PageHeaderProps) {
   const actionButton = action ? (
     <Button
       onClick={action.onClick}
@@ -32,6 +33,15 @@ export function PageHeader({ title, description, action, children }: PageHeaderP
   return (
     <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="space-y-1">
+        {backHref && (
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Back to Settings
+          </Link>
+        )}
         <h1 className="font-heading text-2xl md:text-3xl font-normal tracking-tight text-foreground leading-tight">
           {title}
         </h1>

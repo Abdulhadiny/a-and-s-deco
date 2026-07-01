@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Package, Settings2, ShieldCheck, MapPin, Wallet } from "lucide-react";
+import { Users, Package, Settings2, MapPin, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 
@@ -42,13 +42,6 @@ const settingsSections = [
     description: "Global business settings and defaults",
     icon: Settings2,
     href: "/settings/configuration",
-    permission: "settings:manage",
-  },
-  {
-    title: "Audit Log",
-    description: "View immutable logs of all system actions",
-    icon: ShieldCheck,
-    href: "/settings/audit-log",
     permission: "settings:manage",
   },
 ];

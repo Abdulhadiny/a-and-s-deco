@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { AuditLogClient } from "./client";
 import { AuditAction, Prisma } from "@/generated/prisma";
@@ -15,6 +17,11 @@ interface PageProps {
 }
 
 export default async function AuditLogPage({ searchParams }: PageProps) {
+  const session = await auth();
+  if (session?.user?.role !== "super_admin") {
+    redirect("/settings");
+  }
+
   const params = await searchParams;
   const page = Number(params.page || "1");
   const limit = 20;

@@ -8,6 +8,8 @@ import { checkPermission } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
 import { RentalEngine } from "@/lib/engines/rental-engine";
 import { getAvailableItems } from "@/lib/availability";
+import { notifyByLocation } from "@/lib/notifications";
+import { NotificationType } from "@/generated/prisma";
 
 export async function getEvents(filters?: {
   status?: EventStatus;
@@ -111,6 +113,15 @@ export async function createEvent(formData: FormData) {
   });
 
   revalidatePath("/events");
+
+  const formattedDate = event.eventDate.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+  await notifyAll({
+    title: "New Event Booked",
+    message: `${event.title} on ${formattedDate}`,
+    type: NotificationType.EVENT_CREATED,
+    link: `/events/${event.id}`,
+  });
+
   return event;
 }
 
@@ -179,6 +190,13 @@ export async function allocateItems(eventId: string, itemIds: string[], location
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/inventory"); // Stock counts changed
+
+  await notifyByLocation(targetLocationId, {
+    title: "Items Going Out",
+    message: `${itemIds.length} item(s) leaving your warehouse for "${event.title}"`,
+    type: NotificationType.ITEMS_ALLOCATED,
+    link: `/events/${eventId}`,
+  });
 }
 
 export async function returnItem(
@@ -214,6 +232,13 @@ export async function returnItem(
 
   revalidatePath(`/events/${eventItem.eventId}`);
   revalidatePath("/inventory");
+
+  await notifyByLocation(targetLocationId, {
+    title: "Items Returned",
+    message: `Items returned to your warehouse from "${eventItem.event.title}"`,
+    type: NotificationType.ITEMS_RETURNED,
+    link: `/events/${eventItem.eventId}`,
+  });
 }
 
 export async function getEventsForMonth(year: number, month: number) {
@@ -313,6 +338,13 @@ export async function returnAllItems(eventId: string, locationId?: string) {
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/inventory");
+
+  await notifyByLocation(targetLocationId, {
+    title: "All Items Returned",
+    message: `All items returned to your warehouse from "${unreturnedItems[0].event.title}"`,
+    type: NotificationType.ITEMS_RETURNED,
+    link: `/events/${eventId}`,
+  });
 }
 
 export async function reconcileDamages(input: unknown) {
@@ -374,7 +406,7 @@ export async function reconcileDamages(input: unknown) {
           categoryId: damageCategory.id,
           amount: item.amount,
           expenseDate: new Date(),
-          description: `Write-off: ${item.itemName} (${item.condition}) — Event ${eventId}`,
+          description: `Write-off: ${item.itemName} (${item.condition}) — ${event.title}`,
           createdBy: session.user.id,
         },
       });

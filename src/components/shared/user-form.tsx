@@ -142,7 +142,9 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger className="bg-muted border-border text-foreground">
-                    <SelectValue placeholder="Select role" />
+                    <SelectValue placeholder="Select role">
+                      {field.value ? roles.find((r) => r.id === field.value)?.displayName : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border text-foreground">
                     {roles.map((role) => (
@@ -163,7 +165,11 @@ export function UserForm({ initialData, roles, locations }: UserFormProps) {
               render={({ field }) => (
                  <Select value={field.value || "null"} onValueChange={(v) => field.onChange(v === "null" || !v ? null : v)}>
                   <SelectTrigger className="bg-muted border-border text-foreground">
-                    <SelectValue placeholder="Global (All locations)" />
+                    <SelectValue placeholder="Global (All locations)">
+                      {field.value == null
+                        ? "Global (All locations)"
+                        : locations.find((l) => l.id === field.value)?.name}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="null">Global (All locations)</SelectItem>

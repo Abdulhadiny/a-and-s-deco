@@ -22,6 +22,7 @@ export default async function ProductCatalogPage() {
       <PageHeader
         title="Product Catalog"
         description="Manage item categories and catalog settings"
+        backHref="/settings"
       />
 
       <div className="grid gap-6 lg:grid-cols-3">

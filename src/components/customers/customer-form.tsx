@@ -23,6 +23,7 @@ import {
   UserPlusIcon,
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { filterName } from "@/lib/input-filters";
 
 interface CustomerData {
   id: string;
@@ -52,6 +53,7 @@ export function CustomerForm({
   const [success, setSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
+  const [customerName, setCustomerName] = useState(customer?.name ?? "");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -104,9 +106,10 @@ export function CustomerForm({
           <Input
             id="cust-name"
             name="name"
+            value={customerName}
+            onChange={(e) => setCustomerName(filterName(e.target.value))}
             required
             disabled={isPending}
-            defaultValue={customer?.name ?? ""}
             placeholder="Customer name"
           />
         </div>
@@ -218,6 +221,7 @@ export function CustomerFormDialog() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [dialogName, setDialogName] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -264,6 +268,8 @@ export function CustomerFormDialog() {
             <Input
               id="new-cust-name"
               name="name"
+              value={dialogName}
+              onChange={(e) => setDialogName(filterName(e.target.value))}
               required
               disabled={isPending}
               placeholder="Customer name"

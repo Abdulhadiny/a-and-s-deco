@@ -9,8 +9,8 @@ export function usePermissions() {
   const role = user?.role;
   const permissions = user?.permissions ?? [];
 
-  // For as-deco, role name 'admin' is the super role
-  const isAdmin = role === "admin";
+  const isSuperAdmin = role === "super_admin";
+  const isAdmin = role === "admin" || isSuperAdmin;
 
   const hasPermission = (perm: string): boolean => {
     if (isAdmin) return true;
@@ -26,5 +26,5 @@ export function usePermissions() {
 
   const isLoaded = status !== "loading";
 
-  return { role, permissions, isAdmin, isReadOnly, isLoaded, hasPermission };
+  return { role, permissions, isAdmin, isSuperAdmin, isReadOnly, isLoaded, hasPermission };
 }

@@ -198,7 +198,9 @@ export function AuditLogClient({
             onValueChange={(val) => updateFilters({ action: val ?? undefined })}
           >
             <SelectTrigger className="bg-muted border-border text-foreground w-[130px] h-9 text-xs">
-              <SelectValue placeholder="All Actions" />
+              <SelectValue placeholder="All Actions">
+                {({ all: "All Actions", create: "Create", update: "Update", delete: "Delete", read: "Read" } as Record<string, string>)[currentAction]}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-card border-border text-foreground">
               <SelectItem value="all">All Actions</SelectItem>
@@ -215,7 +217,9 @@ export function AuditLogClient({
             onValueChange={(val) => updateFilters({ module: val ?? undefined })}
           >
             <SelectTrigger className="bg-muted border-border text-foreground w-[130px] h-9 text-xs">
-              <SelectValue placeholder="All Modules" />
+              <SelectValue placeholder="All Modules">
+                {({ all: "All Modules", users: "Users", finance: "Finance", inventory: "Inventory", events: "Events", customers: "Customers", settings: "Settings" } as Record<string, string>)[currentModule]}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-card border-border text-foreground">
               <SelectItem value="all">All Modules</SelectItem>

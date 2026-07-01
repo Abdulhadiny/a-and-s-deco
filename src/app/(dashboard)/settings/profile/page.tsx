@@ -22,6 +22,7 @@ export default async function ProfilePage() {
       <PageHeader
         title="My Profile"
         description="Update your name and password"
+        backHref="/settings"
       />
 
       <Card className="border-border bg-card shadow-sm overflow-hidden">

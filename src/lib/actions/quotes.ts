@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { QuoteStatus } from "@/generated/prisma";
+import { NotificationType, QuoteStatus } from "@/generated/prisma";
+import { notifyAll } from "@/lib/notifications";
 
 export async function getQuotes(filters: { page?: number; pageSize?: number } = {}) {
   const { page = 1, pageSize = 20 } = filters;
@@ -133,4 +134,11 @@ export async function updateQuoteStatus(quoteId: string, status: QuoteStatus) {
   });
   revalidatePath(`/quotes/${quoteId}`);
   revalidatePath(`/events/${quote.eventId}`);
+
+  await notifyAll({
+    title: "Quote Updated",
+    message: `Quote #${quoteId.slice(-6).toUpperCase()} status changed to ${status}`,
+    type: NotificationType.QUOTE_UPDATED,
+    link: `/quotes/${quoteId}`,
+  });
 }

@@ -5,8 +5,10 @@ import { FinanceEngine } from "@/lib/engines/finance-engine";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
-import { AuditAction } from "@/generated/prisma";
+import { AuditAction, NotificationType } from "@/generated/prisma";
 import { expenseCategorySchema } from "@/lib/validators";
+import { notifyAll } from "@/lib/notifications";
+import { formatCurrency } from "@/lib/utils/currency";
 
 /**
  * Records a payment against a customer account and optionally a specific quote.
@@ -22,22 +24,32 @@ export async function recordPayment(data: {
 }) {
   const session = await checkPermission("finance:manage");
 
-  const payment = await FinanceEngine.recordPayment({
-    customerId: data.customerId,
-    quoteId: data.quoteId || undefined,
-    amount: Number(data.amount),
-    paymentDate: new Date(data.paymentDate),
-    paymentMethod: data.paymentMethod,
-    reference: data.reference || undefined,
-    notes: data.notes || undefined,
-    createdBy: session.user.id!,
-  });
+  const [payment, customer] = await Promise.all([
+    FinanceEngine.recordPayment({
+      customerId: data.customerId,
+      quoteId: data.quoteId || undefined,
+      amount: Number(data.amount),
+      paymentDate: new Date(data.paymentDate),
+      paymentMethod: data.paymentMethod,
+      reference: data.reference || undefined,
+      notes: data.notes || undefined,
+      createdBy: session.user.id!,
+    }),
+    db.customer.findUnique({ where: { id: data.customerId }, select: { name: true } }),
+  ]);
 
   revalidatePath(`/customers/${data.customerId}`);
   if (data.quoteId) {
     revalidatePath(`/quotes/${data.quoteId}`);
   }
   revalidatePath("/finance");
+
+  await notifyAll({
+    title: "Payment Received",
+    message: `Payment of ${formatCurrency(data.amount)} received from ${customer?.name ?? "customer"}`,
+    type: NotificationType.PAYMENT_RECEIVED,
+    link: "/finance",
+  });
 }
 
 /**

@@ -22,6 +22,7 @@ export default async function ExpenseCategoriesPage() {
       <PageHeader
         title="Expense Categories"
         description="Manage categories for logging operational expenses"
+        backHref="/settings"
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
