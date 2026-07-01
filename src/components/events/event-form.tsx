@@ -155,7 +155,7 @@ export function EventForm({
             </p>
           ) : (
             <div className="flex gap-2">
-              <Select value={customerId} onValueChange={setCustomerId} disabled={isPending}>
+              <Select value={customerId} onValueChange={(v) => { if (v) setCustomerId(v); }} disabled={isPending}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select customer">
                     {customers.find((c) => c.id === customerId)?.name}
@@ -191,7 +191,7 @@ export function EventForm({
               {EVENT_TYPES.find((t) => t.value === eventType)?.label ?? eventType}
             </p>
           ) : (
-            <Select value={eventType} onValueChange={setEventType} disabled={isPending}>
+            <Select value={eventType} onValueChange={(v) => { if (v) setEventType(v); }} disabled={isPending}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select type">
                   {EVENT_TYPES.find((t) => t.value === eventType)?.label}

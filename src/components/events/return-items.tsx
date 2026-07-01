@@ -63,7 +63,7 @@ export function ReturnItems({ eventId, eventItems, locations }: ReturnItemsProps
       {unreturned.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs">Return to Warehouse</Label>
-          <Select value={locationId} onValueChange={setLocationId}>
+          <Select value={locationId} onValueChange={(v) => { if (v) setLocationId(v); }}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select warehouse">
                 {locations.find((l) => l.id === locationId)?.name}

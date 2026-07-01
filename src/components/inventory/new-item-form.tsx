@@ -55,7 +55,7 @@ export function NewItemForm({ categories: initialCategories, locations = [] }: N
   const [tab, setTab] = useState("single");
 
   return (
-    <Tabs value={tab} onValueChange={setTab}>
+    <Tabs value={tab} onValueChange={(v) => { if (v) setTab(v); }}>
       <TabsList>
         <TabsTrigger value="single">Single Item</TabsTrigger>
         <TabsTrigger value="bulk">Bulk Add</TabsTrigger>
@@ -141,7 +141,7 @@ function SingleItemForm({
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
               <div className="flex gap-2">
-                <Select value={categoryId} onValueChange={setCategoryId} disabled={isPending}>
+                <Select value={categoryId} onValueChange={(v) => { if (v) setCategoryId(v); }} disabled={isPending}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select category">
                       {categories.find((c) => c.id === categoryId)?.name}
@@ -167,7 +167,7 @@ function SingleItemForm({
             {/* Location */}
             <div className="flex flex-col gap-1.5">
               <Label>Initial Stock Location</Label>
-              <Select value={locationId} onValueChange={setLocationId} disabled={isPending}>
+              <Select value={locationId} onValueChange={(v) => { if (v) setLocationId(v); }} disabled={isPending}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select location">
                     {locations.find((l) => l.id === locationId)?.name}
@@ -362,7 +362,7 @@ function BulkAddForm({
         <div className="flex flex-col gap-1.5">
           <Label>Category</Label>
           <div className="flex gap-2">
-            <Select value={categoryId} onValueChange={setCategoryId} disabled={isPending}>
+            <Select value={categoryId} onValueChange={(v) => { if (v) setCategoryId(v); }} disabled={isPending}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select category">
                   {categories.find((c) => c.id === categoryId)?.name}
@@ -388,7 +388,7 @@ function BulkAddForm({
         {/* Location */}
         <div className="flex flex-col gap-1.5">
           <Label>Initial Stock Location</Label>
-          <Select value={locationId} onValueChange={setLocationId} disabled={isPending}>
+          <Select value={locationId} onValueChange={(v) => { if (v) setLocationId(v); }} disabled={isPending}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select location">
                 {locations.find((l) => l.id === locationId)?.name}

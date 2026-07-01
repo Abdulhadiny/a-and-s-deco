@@ -8,7 +8,7 @@ import { checkPermission } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
 import { RentalEngine } from "@/lib/engines/rental-engine";
 import { getAvailableItems } from "@/lib/availability";
-import { notifyByLocation } from "@/lib/notifications";
+import { notifyAll, notifyByLocation } from "@/lib/notifications";
 import { NotificationType } from "@/generated/prisma";
 
 export async function getEvents(filters?: {

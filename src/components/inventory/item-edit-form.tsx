@@ -135,7 +135,7 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
             {/* Category */}
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              <Select value={categoryId} onValueChange={setCategoryId} disabled={isPending}>
+              <Select value={categoryId} onValueChange={(v) => { if (v) setCategoryId(v); }} disabled={isPending}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select category">
                     {categories.find((c) => c.id === categoryId)?.name}
@@ -163,7 +163,7 @@ export function ItemEditForm({ item, categories }: ItemEditFormProps) {
             {/* Status */}
             <div className="flex flex-col gap-1.5">
               <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as ItemStatus)} disabled={isPending}>
+              <Select value={status} onValueChange={(v) => { if (v) setStatus(v as ItemStatus); }} disabled={isPending}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status">
                     {STATUS_OPTIONS.find((o) => o.value === status)?.label}

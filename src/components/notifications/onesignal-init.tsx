@@ -14,7 +14,7 @@ export function OneSignalInit() {
     import("react-onesignal").then(({ default: OneSignal }) => {
       OneSignal.init({
         appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
-        notifyButton: { enable: false },
+        notifyButton: { enable: false } as Parameters<typeof OneSignal.init>[0]["notifyButton"],
         allowLocalhostAsSecureOrigin: true,
       })
         .then(() => {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/ui/money-input";
@@ -90,7 +91,7 @@ export function ExpenseForm({
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 pt-4">
       <div className="space-y-2">
         <Label className="text-foreground/80">Category</Label>
-        <Select value={categoryId} onValueChange={setCategoryId}>
+        <Select value={categoryId} onValueChange={(v) => { if (v) setCategoryId(v); }}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select Category">
               {categories.find((c) => c.id === categoryId)?.name}
@@ -108,7 +109,7 @@ export function ExpenseForm({
         <Label className="text-foreground/80">Location (Optional)</Label>
         <Select
           value={locationId || "__none__"}
-          onValueChange={(v) => setLocationId(v === "__none__" ? "" : v)}
+          onValueChange={(v) => setLocationId(!v || v === "__none__" ? "" : v)}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Global / N/A">

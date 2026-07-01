@@ -72,7 +72,8 @@ export function AllocateItemsDialog({
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("__all__");
 
-  async function handleLocationChange(newLocationId: string) {
+  async function handleLocationChange(newLocationId: string | null) {
+    if (!newLocationId) return;
     setLocationId(newLocationId);
     setSelectedIds(new Set());
     setIsLoadingItems(true);
@@ -222,7 +223,7 @@ export function AllocateItemsDialog({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs">Filter by category</Label>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select value={categoryFilter} onValueChange={(v) => { if (v) setCategoryFilter(v); }}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="All Categories">
                   {categoryFilter === "__all__" ? "All Categories" : categories.find((c) => c.id === categoryFilter)?.name}

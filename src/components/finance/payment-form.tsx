@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldError } from "@/components/ui/field-error";
@@ -127,7 +128,7 @@ export function PaymentForm({ customerId, quoteId, defaultAmount, onSuccess }: P
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Payment Method</Label>
-            <Select value={watch("paymentMethod")} onValueChange={(v) => setValue("paymentMethod", v)}>
+            <Select value={watch("paymentMethod")} onValueChange={(v) => { if (v) setValue("paymentMethod", v); }}>
               <SelectTrigger className="w-full">
                 <SelectValue>
                   {({ BANK_TRANSFER: "Bank Transfer", CASH: "Cash", POS: "POS / Card", CHEQUE: "Cheque" } as Record<string, string>)[watch("paymentMethod")]}
