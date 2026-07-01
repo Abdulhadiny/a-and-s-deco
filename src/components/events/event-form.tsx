@@ -353,6 +353,7 @@ function NewCustomerDialog({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    e.stopPropagation();
     setError(null);
 
     const formData = new FormData(e.currentTarget);
@@ -365,7 +366,7 @@ function NewCustomerDialog({
 
     startTransition(async () => {
       try {
-        const created = await createCustomer(formData);
+        const created = await createCustomer(Object.fromEntries(formData.entries()));
         onCreated({
           id: created.id,
           name: created.name,

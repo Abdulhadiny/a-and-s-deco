@@ -550,6 +550,7 @@ function NewCategoryDialog({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    e.stopPropagation();
     setError(null);
 
     const formData = new FormData(e.currentTarget);
@@ -562,7 +563,7 @@ function NewCategoryDialog({
 
     startTransition(async () => {
       try {
-        await createCategory(formData);
+        await createCategory(Object.fromEntries(formData.entries()));
         const { getCategories } = await import("@/lib/actions/inventory");
         const updated = await getCategories();
         const created = updated.find(
