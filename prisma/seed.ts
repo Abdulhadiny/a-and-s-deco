@@ -1,12 +1,13 @@
-import "dotenv/config";
+import { config } from "dotenv";
 import { PrismaClient } from "../src/generated/prisma";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import bcrypt from "bcryptjs";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
-
 async function main() {
+  config(); // load .env before anything uses process.env
+  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
+  const prisma = new PrismaClient({ adapter });
+
   console.log("Seeding as-deco database...\n");
 
   // ─── 1. LOCATION ────────────────────────────────
@@ -137,7 +138,7 @@ async function main() {
   console.log("+ Role-Permission mappings applied");
 
   // ─── 6. USERS ────────────────────────────────────
-  const passwordHash = await bcrypt.hash("admin123", 12);
+  const passwordHash = await bcrypt.hash("DefaultPass#123", 12);
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@asdeco.com" },
     update: {
@@ -154,7 +155,7 @@ async function main() {
   });
   console.log("+ Admin user:", adminUser.email);
 
-  const superAdminHash = await bcrypt.hash("superadmin123", 12);
+  const superAdminHash = await bcrypt.hash("DefaultPass#123", 12);
   const superAdminUser = await prisma.user.upsert({
     where: { email: "superadmin@asdeco.com" },
     update: {
@@ -229,12 +230,10 @@ async function main() {
   console.log("+ System expense category: Damage & Loss");
 
   console.log("\nSeed complete.");
+  await prisma.$disconnect();
 }
 
-main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error("Seed failed:", e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+main().catch(async (e) => {
+  console.error("Seed failed:", e);
+  process.exit(1);
+});
